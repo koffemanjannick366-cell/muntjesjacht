@@ -73,7 +73,16 @@
   .level-choice span:first-child { font-weight:850; }
   .level-choice span:last-child { color:#b0bfd2; font-size:12px; font-weight:600; }
   .powerup-label { color:var(--pink); }
-  @media (max-width:400px) { .level-grid { grid-template-columns:1fr; } }
+  .shop-row { flex-wrap:wrap; margin-top:12px; }
+  .wallet-pill { padding:9px 13px; border:1px solid #42536c; border-radius:11px; background:#0e192a; color:#dbe5f2; }
+  .wallet-pill strong { color:var(--gold); }
+  .skin-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:12px; }
+  .skin-choice { display:flex; min-height:76px; flex-direction:column; align-items:flex-start; justify-content:center; gap:3px; padding:10px 12px; border:1px solid #42536c; border-radius:12px; background:#132238; color:#f8fafc; font:inherit; text-align:left; box-shadow:none; }
+  .skin-choice:hover { border-color:#facc15; background:#1c304a; transform:translateY(-1px); box-shadow:none; }
+  .skin-choice.equipped { border-color:#38bdf8; background:#123047; }
+  .skin-choice span:first-child { font-weight:850; }
+  .skin-choice span:last-child { color:#b0bfd2; font-size:12px; }
+  @media (max-width:400px) { .level-grid,.skin-grid { grid-template-columns:1fr; } }
   .scores-card { margin-top:18px; padding:17px clamp(14px,3vw,22px); border:1px solid #33445f; border-radius:18px; background:#111d2eeb; }
   .scores-card h2 { margin:0 0 10px; color:var(--gold); font-size:20px; }
   #leaderboard { width:100%; border-collapse:collapse; overflow:hidden; border-radius:10px; }
@@ -98,7 +107,7 @@
   <section class="card" aria-label="Spel">
     <div class="stats" aria-live="polite">
       <button type="button" class="level-stat" id="levelPicker" aria-label="Kies een vrijgespeeld level">
-        <small>LEVEL KIEZEN</small><strong id="level">1 / 10 ▾</strong><span class="level-name" id="levelName">🌲 Startbos</span>
+        <small>LEVEL KIEZEN</small><strong id="level">1 / 15 ▾</strong><span class="level-name" id="levelName">🌲 Startbos</span>
       </button>
       <div class="stat"><small>MUNTJES</small><strong id="progress">0 / 6</strong></div>
       <div class="stat"><small>TIJD</small><strong id="time">48</strong></div>
@@ -127,11 +136,19 @@
       <input id="playerName" maxlength="16" placeholder="Typ je naam" autocomplete="nickname">
       <button type="button" id="startButton">Start / opnieuw</button>
     </div>
+    <div class="controls-row shop-row"><button type="button" class="secondary" id="shopButton">🛍️ Skins & winkel</button><span class="wallet-pill">🪙 <strong id="wallet">0</strong> muntjes</span><span class="wallet-pill">Huidige skin: <strong id="skinName">Blauw</strong></span></div>
   </section>
   <div class="level-menu hidden" id="levelMenu" role="dialog" aria-modal="true" aria-labelledby="levelMenuTitle">
     <div class="level-menu-card">
       <div class="level-menu-top"><div><h2 id="levelMenuTitle">Kies een level</h2><p id="levelMenuProgress"></p></div><button type="button" class="close-levels" id="closeLevels" aria-label="Sluit levelkeuze">Sluiten</button></div>
       <div class="level-grid" id="levelGrid"></div>
+    </div>
+  </div>
+  <div class="level-menu hidden" id="shopMenu" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+    <div class="level-menu-card">
+      <div class="level-menu-top"><div><h2 id="shopTitle">Muntjeswinkel</h2><p id="shopBalance"></p></div><button type="button" class="close-levels" id="closeShop">Sluiten</button></div>
+      <p>Pak muntjes in levels. Je portemonnee wordt op dit apparaat bewaard.</p>
+      <div class="skin-grid" id="skinGrid"></div>
     </div>
   </div>
   <section class="scores-card">
@@ -146,18 +163,23 @@
 <script>
 (function () {
   'use strict';
-  const totalLevels = 10;
+  const totalLevels = 15;
   const levels = [
-    { name:'Startbos', icon:'🌲', goal:6, time:48, enemies:1, speed:78, sky:'#16334a', ground:'#112338' },
-    { name:'Muntjesduin', icon:'🏜️', goal:7, time:46, enemies:2, speed:86, sky:'#493124', ground:'#2d2030' },
-    { name:'Neonstad', icon:'🌆', goal:8, time:44, enemies:2, speed:94, sky:'#252053', ground:'#151936' },
-    { name:'IJsberg', icon:'❄️', goal:9, time:42, enemies:3, speed:102, sky:'#17405a', ground:'#10283f' },
-    { name:'Ruimtestation', icon:'🚀', goal:10, time:40, enemies:3, speed:110, sky:'#291845', ground:'#17162f' },
-    { name:'Vulkanen', icon:'🌋', goal:11, time:38, enemies:4, speed:118, sky:'#522427', ground:'#241729' },
-    { name:'Spookkasteel', icon:'👻', goal:12, time:36, enemies:4, speed:126, sky:'#293349', ground:'#171c2b' },
-    { name:'Regenboogpad', icon:'🌈', goal:13, time:34, enemies:5, speed:134, sky:'#273a51', ground:'#14253a' },
-    { name:'Drakenhol', icon:'🐉', goal:14, time:32, enemies:5, speed:142, sky:'#3c233b', ground:'#20172c' },
-    { name:'Schatkamer', icon:'🏆', goal:15, time:30, enemies:6, speed:150, sky:'#493a1b', ground:'#211f24' }
+    { name:'Startbos', icon:'🌲', goal:6, time:58, enemies:1, speed:82, sky:'#16334a', ground:'#112338', map:0 },
+    { name:'Muntjesduin', icon:'🏜️', goal:8, time:55, enemies:2, speed:90, sky:'#493124', ground:'#2d2030', map:1 },
+    { name:'Neonstad', icon:'🌆', goal:10, time:52, enemies:2, speed:98, sky:'#252053', ground:'#151936', map:2 },
+    { name:'IJsberg', icon:'❄️', goal:12, time:49, enemies:3, speed:106, sky:'#17405a', ground:'#10283f', map:3 },
+    { name:'Ruimtestation', icon:'🚀', goal:14, time:46, enemies:3, speed:114, sky:'#291845', ground:'#17162f', map:4 },
+    { name:'Vulkanen', icon:'🌋', goal:16, time:43, enemies:4, speed:122, sky:'#522427', ground:'#241729', map:2 },
+    { name:'Spookkasteel', icon:'👻', goal:18, time:40, enemies:4, speed:130, sky:'#293349', ground:'#171c2b', map:1 },
+    { name:'Regenboogpad', icon:'🌈', goal:20, time:38, enemies:5, speed:138, sky:'#273a51', ground:'#14253a', map:3 },
+    { name:'Drakenhol', icon:'🐉', goal:22, time:36, enemies:5, speed:146, sky:'#3c233b', ground:'#20172c', map:4 },
+    { name:'Schatkamer', icon:'🏆', goal:24, time:34, enemies:6, speed:154, sky:'#493a1b', ground:'#211f24', map:0 },
+    { name:'Vergeten tempel', icon:'🛕', goal:25, time:33, enemies:6, speed:160, sky:'#30472e', ground:'#172419', map:1 },
+    { name:'Kristalgrot', icon:'💎', goal:26, time:32, enemies:7, speed:166, sky:'#194457', ground:'#111c31', map:3 },
+    { name:'Stormzee', icon:'🌊', goal:27, time:31, enemies:7, speed:172, sky:'#173b55', ground:'#111c31', map:2 },
+    { name:'Drakenberg', icon:'🏔️', goal:28, time:30, enemies:8, speed:178, sky:'#49313b', ground:'#211729', map:4 },
+    { name:'Koninklijke kluis', icon:'👑', goal:30, time:30, enemies:8, speed:184, sky:'#493a1b', ground:'#211f24', map:1 }
   ];
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d');
@@ -178,20 +200,42 @@
   const levelMenu = document.querySelector('#levelMenu');
   const levelGrid = document.querySelector('#levelGrid');
   const levelMenuProgress = document.querySelector('#levelMenuProgress');
+  const shopMenu = document.querySelector('#shopMenu');
+  const skinGrid = document.querySelector('#skinGrid');
+  const shopBalance = document.querySelector('#shopBalance');
+  const walletLabel = document.querySelector('#wallet');
+  const skinNameLabel = document.querySelector('#skinName');
   const keys = new Set();
   const scoreStorageKey = 'muntjesjacht-scores-v1';
   const playerNameStorageKey = 'muntjesjacht-player-name';
   const progressStorageKey = 'muntjesjacht-level-progress-v1';
+  const walletStorageKey = 'muntjesjacht-wallet-v1';
+  const skinsStorageKey = 'muntjesjacht-skins-v1';
+  const equippedSkinStorageKey = 'muntjesjacht-equipped-skin-v1';
+  const skins = [
+    { id:'blue', name:'Blauw', icon:'🙂', color:'#38bdf8', price:0 },
+    { id:'lime', name:'Limoen', icon:'😎', color:'#84cc16', price:15 },
+    { id:'berry', name:'Bes', icon:'😺', color:'#f472b6', price:30 },
+    { id:'flame', name:'Vuur', icon:'🔥', color:'#fb7185', price:50 },
+    { id:'sun', name:'Zonnetje', icon:'😇', color:'#fbbf24', price:75 },
+    { id:'ghost', name:'Spookje', icon:'👻', color:'#c4b5fd', price:100 },
+    { id:'mint', name:'Mint', icon:'🐸', color:'#2dd4bf', price:140 },
+    { id:'royal', name:'Koninklijk', icon:'👑', color:'#e879f9', price:200 }
+  ];
   const playerRadius = 13;
   let gameState = 'ready';
   let player = { x: canvas.width / 2, y: canvas.height / 2 };
   let coin = { x: canvas.width * .7, y: canvas.height * .5 };
-  let powerup = null;
+  let powerup = null, activeBoost = null;
+  let terrain = { walls:[], lava:[] };
   let enemies = [];
   let level = 1, collected = 0, score = 0, lives = 3;
   let target = levels[0].goal, secondsLeft = levels[0].time;
   let invulnerableFor = 0, magnetFor = 0, coinPickupLock = 0, powerupCooldown = 8;
   let lastFrameAt = 0, lastShownSecond = -1, playerName = '', scoreSaved = false;
+  let wallet = readWallet();
+  let ownedSkins = readOwnedSkins();
+  let equippedSkinId = readEquippedSkin();
   let highestCompleted = readProgress();
   let unlockedThrough = Math.min(totalLevels, highestCompleted + 1);
   try { nameInput.value = localStorage.getItem(playerNameStorageKey) || ''; } catch (_) {}
@@ -202,6 +246,16 @@
       return Number.isFinite(saved) ? Math.max(0, Math.min(totalLevels, saved)) : 0;
     } catch (_) { return 0; }
   }
+  function readWallet() { try { const n=Number.parseInt(localStorage.getItem(walletStorageKey)||'0',10); return Number.isFinite(n)?Math.max(0,n):0; } catch (_) { return 0; } }
+  function readOwnedSkins() { try { const a=JSON.parse(localStorage.getItem(skinsStorageKey)||'["blue"]'); return Array.isArray(a)?Array.from(new Set(['blue'].concat(a.filter(id=>skins.some(s=>s.id===id))))):['blue']; } catch (_) { return ['blue']; } }
+  function readEquippedSkin() { try { const id=localStorage.getItem(equippedSkinStorageKey)||'blue'; return skins.some(s=>s.id===id)?id:'blue'; } catch (_) { return 'blue'; } }
+  function updateWalletUI() { walletLabel.textContent=String(wallet); shopBalance.textContent='Je hebt ' + wallet + ' muntjes. Pak muntjes in levels om skins te kopen.'; }
+  function persistWallet() { try { localStorage.setItem(walletStorageKey,String(wallet)); } catch (_) {} updateWalletUI(); }
+  function updateSkinUI() { const selected=skins.find(s=>s.id===equippedSkinId)||skins[0]; skinNameLabel.textContent=selected.name; Array.from(skinGrid.children).forEach((button,i)=>{const skin=skins[i],owned=ownedSkins.includes(skin.id),equipped=equippedSkinId===skin.id;button.classList.toggle('equipped',equipped);button.querySelector('span:last-child').textContent=equipped?'Aangetrokken':owned?'Gekocht · klik om aan te trekken':skin.price+' muntjes · klik om te kopen';}); }
+  function persistSkins() { try { localStorage.setItem(skinsStorageKey,JSON.stringify(ownedSkins)); localStorage.setItem(equippedSkinStorageKey,equippedSkinId); } catch (_) {} updateSkinUI(); }
+  function renderShop() { skinGrid.replaceChildren(); skins.forEach(skin=>{const b=document.createElement('button');b.type='button';b.className='skin-choice';const n=document.createElement('span');n.textContent=skin.icon+' '+skin.name;const d=document.createElement('span');b.append(n,d);b.addEventListener('click',()=>{if(ownedSkins.includes(skin.id)){equippedSkinId=skin.id;persistSkins();return;}if(wallet<skin.price){shopBalance.textContent='Je hebt nog '+(skin.price-wallet)+' muntjes nodig.';return;}wallet-=skin.price;ownedSkins.push(skin.id);equippedSkinId=skin.id;persistWallet();persistSkins();});skinGrid.append(b);});updateWalletUI();updateSkinUI(); }
+  function openShop() { if(gameState==='playing')pauseGame();renderShop();shopMenu.classList.remove('hidden');shopMenu.setAttribute('aria-hidden','false');const b=skinGrid.querySelector('button');if(b)b.focus(); }
+  function closeShop() { shopMenu.classList.add('hidden');shopMenu.setAttribute('aria-hidden','true');document.querySelector('#shopButton').focus(); }
   function persistProgress() {
     try { localStorage.setItem(progressStorageKey, String(highestCompleted)); } catch (_) {}
     unlockedThrough = Math.min(totalLevels, highestCompleted + 1);
@@ -261,6 +315,7 @@
     lastShownSecond = Math.ceil(secondsLeft);
     timeLabel.classList.toggle('low', secondsLeft <= 10);
     livesLabel.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+    updateWalletUI();
     levelPicker.disabled = false;
     levelPicker.setAttribute('aria-label', 'Level ' + level + ' van ' + totalLevels + '. Klik om vrijgespeelde levels te kiezen.');
   }
@@ -268,10 +323,22 @@
     if (!others.length) return Infinity;
     return Math.min.apply(null, others.map(function (other) { return Math.hypot(point.x - other.x, point.y - other.y); }));
   }
+  const mapTemplates = [
+    [{x:.13,y:.24,w:.15,h:.12,type:'wall'},{x:.72,y:.62,w:.16,h:.12,type:'wall'},{x:.38,y:.76,w:.24,h:.08,type:'lava'}],
+    [{x:.12,y:.18,w:.09,h:.64,type:'wall'},{x:.79,y:.18,w:.09,h:.64,type:'wall'},{x:.39,y:.15,w:.22,h:.12,type:'wall'},{x:.39,y:.73,w:.22,h:.12,type:'wall'}],
+    [{x:.12,y:.16,w:.2,h:.16,type:'lava'},{x:.68,y:.67,w:.2,h:.16,type:'lava'},{x:.39,y:.39,w:.22,h:.1,type:'wall'}],
+    [{x:.2,y:.2,w:.1,h:.2,type:'wall'},{x:.7,y:.2,w:.1,h:.2,type:'wall'},{x:.2,y:.6,w:.1,h:.2,type:'wall'},{x:.7,y:.6,w:.1,h:.2,type:'wall'},{x:.42,y:.12,w:.16,h:.08,type:'lava'}],
+    [{x:.15,y:.3,w:.27,h:.08,type:'wall'},{x:.58,y:.3,w:.27,h:.08,type:'wall'},{x:.15,y:.62,w:.27,h:.08,type:'wall'},{x:.58,y:.62,w:.27,h:.08,type:'wall'},{x:.45,y:.43,w:.1,h:.14,type:'lava'}]
+  ];
+  function buildTerrain() { terrain={walls:[],lava:[]}; (mapTemplates[levels[level-1].map]||mapTemplates[0]).forEach(s=>terrain[s.type==='lava'?'lava':'walls'].push({x:s.x*canvas.width,y:s.y*canvas.height,w:s.w*canvas.width,h:s.h*canvas.height})); }
+  function circleHitsRect(x,y,r,rect) { const nx=Math.max(rect.x,Math.min(x,rect.x+rect.w)),ny=Math.max(rect.y,Math.min(y,rect.y+rect.h));return Math.hypot(x-nx,y-ny)<r; }
+  function blockedAt(point,r) { return terrain.walls.some(rect=>circleHitsRect(point.x,point.y,r,rect)); }
+  function inLava(point,r) { return terrain.lava.some(rect=>circleHitsRect(point.x,point.y,r,rect)); }
   function safePoint(others, preferredGap) {
     let best = null, bestScore = -1;
     for (let attempt = 0; attempt < 160; attempt++) {
       const point = { x: 26 + Math.random() * (canvas.width - 52), y: 26 + Math.random() * (canvas.height - 52) };
+      if (blockedAt(point,18)||inLava(point,18)) continue;
       const clearance = minDistance(point, others);
       if (clearance >= preferredGap) return point;
       if (clearance > bestScore) { best = point; bestScore = clearance; }
@@ -291,8 +358,9 @@
     let best = null, bestScore = -1;
     for (let attempt = 0; attempt < 180; attempt++) {
       const point = { x: 24 + Math.random() * (canvas.width - 48), y: 24 + Math.random() * (canvas.height - 48) };
+      if (blockedAt(point,16)||inLava(point,16)) continue;
       const clearance = minDistance(point, others);
-      if (clearance >= 142) { coin = point; return; }
+      if (clearance >= 150 + level*4) { coin = point; return; }
       if (clearance > bestScore) { best = point; bestScore = clearance; }
     }
     coin = best || { x: 40, y: 40 };
@@ -335,7 +403,7 @@
     const data = levels[level - 1];
     collected = 0; target = data.goal; secondsLeft = data.time;
     player = { x: canvas.width / 2, y: canvas.height / 2 };
-    enemies = []; powerup = null; coin = { x: 40, y: 40 };
+    enemies = []; powerup = null; activeBoost = null; buildTerrain(); coin = { x: 40, y: 40 };
     for (let i = 0; i < data.enemies; i++) enemies.push(makeEnemy(i));
     placeCoin();
     invulnerableFor = 1.25; magnetFor = 0; coinPickupLock = 0; powerupCooldown = 7 + Math.random() * 3;
@@ -370,7 +438,7 @@
     persistProgress(); renderLevelMenu(); keys.clear(); pauseButton.hidden = true;
     if (level >= totalLevels) {
       gameState = 'won'; saveScore();
-      showOverlay('🏆', 'Alle 10 levels gehaald!', 'Geweldig, ' + (playerName || 'speler') + '! Je hebt de hele Muntjesjacht uitgespeeld met ' + score + ' punten.', 'Opnieuw spelen');
+      showOverlay('🏆', 'Alle 15 levels gehaald!', 'Geweldig, ' + (playerName || 'speler') + '! Je hebt de hele Muntjesjacht uitgespeeld met ' + score + ' punten.', 'Opnieuw spelen');
     } else {
       gameState = 'levelComplete';
       showOverlay('🎉', 'Level ' + level + ' gehaald!', 'Je hebt alle ' + target + ' muntjes verzameld. Level ' + (level + 1) + ' is vrijgespeeld!', 'Naar level ' + (level + 1));
@@ -396,7 +464,7 @@
   function spawnPowerup() {
     const types = ['shield','clock','magnet'];
     const type = types[Math.floor(Math.random() * types.length)];
-    powerup = { type: type, x: 0, y: 0, life: 8 };
+    powerup = { type: type, x: 0, y: 0, life: 5 };
     const point = safePoint([player, coin].concat(enemies), 105);
     powerup.x = point.x; powerup.y = point.y;
     setMessage('Er is een power-up verschenen! Pak hem voor extra hulp.', '#f9a8d4');
@@ -404,26 +472,21 @@
   function collectPowerup() {
     const type = powerup.type;
     powerup = null;
-    if (type === 'shield') {
-      invulnerableFor = Math.max(invulnerableFor, 6);
-      setMessage('🛡️ Schild actief: 6 seconden veilig!', '#7dd3fc');
-    } else if (type === 'clock') {
-      secondsLeft = Math.min(levels[level - 1].time + 12, secondsLeft + 8);
-      setMessage('⏰ Tijdboost: 8 seconden erbij!', '#c4b5fd');
-    } else {
-      magnetFor = 7;
-      setMessage('🧲 Muntjesmagneet actief: muntjes komen naar je toe!', '#f9a8d4');
-    }
+    activeBoost = {type:type,time:5};
+    if (type === 'shield') { invulnerableFor=Math.max(invulnerableFor,5); setMessage('🛡️ Schild actief: 5 seconden veilig!','#7dd3fc'); }
+    else if (type === 'clock') setMessage('⏰ Tijd vertraagt 5 seconden!','#c4b5fd');
+    else { magnetFor=5; setMessage('🧲 Muntjesmagneet actief: 5 seconden!','#f9a8d4'); }
   }
   function update(dt) {
-    secondsLeft = Math.max(0, secondsLeft - dt);
+    if (activeBoost) { activeBoost.time=Math.max(0,activeBoost.time-dt); if(activeBoost.time<=0) activeBoost=null; }
+    secondsLeft = Math.max(0, secondsLeft - dt*(activeBoost&&activeBoost.type==='clock'?.5:1));
     invulnerableFor = Math.max(0, invulnerableFor - dt);
     magnetFor = Math.max(0, magnetFor - dt);
     coinPickupLock = Math.max(0, coinPickupLock - dt);
     if (powerup) {
       powerup.life -= dt;
       if (powerup.life <= 0) { powerup = null; powerupCooldown = 4 + Math.random() * 3; }
-    } else {
+    } else if (!activeBoost) {
       powerupCooldown -= dt;
       if (powerupCooldown <= 0) spawnPowerup();
     }
@@ -433,9 +496,12 @@
     if (keys.has('ArrowLeft') || keys.has('a')) dx--;
     if (keys.has('ArrowRight') || keys.has('d')) dx++;
     if (dx && dy) { dx *= Math.SQRT1_2; dy *= Math.SQRT1_2; }
-    const playerSpeed = 205;
-    player.x = Math.max(playerRadius, Math.min(canvas.width - playerRadius, player.x + dx * playerSpeed * dt));
-    player.y = Math.max(playerRadius, Math.min(canvas.height - playerRadius, player.y + dy * playerSpeed * dt));
+    const playerSpeed = 190;
+    const nextX=Math.max(playerRadius,Math.min(canvas.width-playerRadius,player.x+dx*playerSpeed*dt));
+    const nextY=Math.max(playerRadius,Math.min(canvas.height-playerRadius,player.y+dy*playerSpeed*dt));
+    if(!blockedAt({x:nextX,y:player.y},playerRadius))player.x=nextX;
+    if(!blockedAt({x:player.x,y:nextY},playerRadius))player.y=nextY;
+    if(inLava(player,playerRadius))changeLife();
 
     enemies.forEach(function (enemy) {
       enemy.x += enemy.vx * dt; enemy.y += enemy.vy * dt;
@@ -457,9 +523,9 @@
         coin.x += toPlayerX / distance * pull; coin.y += toPlayerY / distance * pull;
       }
     }
-    if (powerup && Math.hypot(player.x - powerup.x, player.y - powerup.y) < playerRadius + 17) collectPowerup();
+    if (powerup && !activeBoost && Math.hypot(player.x - powerup.x, player.y - powerup.y) < playerRadius + 17) collectPowerup();
     if (coinPickupLock <= 0 && Math.hypot(player.x - coin.x, player.y - coin.y) < playerRadius + 10) {
-      collected++; score += 10; coinPickupLock = .22;
+      collected++; score += 10; wallet++; persistWallet(); coinPickupLock = .22;
       placeCoin(); updateHud();
       setMessage('Muntje gepakt! Nog ' + (target - collected) + ' te gaan.', '#86efac');
       if (collected >= target) { completeLevel(); return; }
@@ -475,6 +541,8 @@
     ctx.strokeStyle = 'rgba(203, 213, 225, .08)'; ctx.lineWidth = 1;
     for (let x = 20; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
     for (let y = 20; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+    terrain.lava.forEach(r=>{ctx.fillStyle='#e5484d';ctx.shadowColor='#fb923c';ctx.shadowBlur=15;ctx.fillRect(r.x,r.y,r.w,r.h);ctx.shadowBlur=0;ctx.fillStyle='#fbbf24';for(let x=r.x+9;x<r.x+r.w;x+=24){ctx.beginPath();ctx.arc(x,r.y+r.h/2,3,0,Math.PI*2);ctx.fill();}});
+    terrain.walls.forEach(r=>{const g=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);g.addColorStop(0,'#64748b');g.addColorStop(1,'#334155');ctx.fillStyle=g;ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(r.x,r.y,r.w,r.h,7);ctx.fill();ctx.stroke();});
 
     ctx.fillStyle = '#ffd84d'; ctx.shadowColor = '#facc15'; ctx.shadowBlur = 17;
     ctx.beginPath(); ctx.arc(coin.x, coin.y, 12, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
@@ -497,9 +565,10 @@
       ctx.restore();
     });
 
+    const skin = skins.find(s=>s.id===equippedSkinId)||skins[0];
     const blink = invulnerableFor > 0 && Math.floor(invulnerableFor * 12) % 2 === 0;
     if (!blink) {
-      ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 18; ctx.fillStyle = '#38bdf8';
+      ctx.shadowColor = skin.color; ctx.shadowBlur = 18; ctx.fillStyle = skin.color;
       ctx.beginPath(); ctx.arc(player.x, player.y, playerRadius, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
       ctx.fillStyle = '#082f49'; ctx.beginPath(); ctx.arc(player.x - 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.arc(player.x + 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#082f49'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(player.x, player.y + 1.5, 4.2, .18, Math.PI - .18); ctx.stroke();
@@ -555,9 +624,10 @@
   });
   levelPicker.addEventListener('click', openLevelMenu);
   document.querySelector('#closeLevels').addEventListener('click', closeLevelMenu);
-  levelMenu.addEventListener('click', function (event) {
-    if (event.target === levelMenu) closeLevelMenu();
-  });
+  document.querySelector('#shopButton').addEventListener('click',openShop);
+  document.querySelector('#closeShop').addEventListener('click',closeShop);
+  levelMenu.addEventListener('click', function (event) { if (event.target === levelMenu) closeLevelMenu(); });
+  shopMenu.addEventListener('click',event=>{if(event.target===shopMenu)closeShop();});
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && !levelMenu.classList.contains('hidden')) closeLevelMenu();
   });
@@ -574,7 +644,7 @@
     button.addEventListener('pointercancel', release);
     button.addEventListener('lostpointercapture', function () { keys.delete(key); });
   });
-  renderLevelMenu(); showScores(); updateHud(); draw();
+  renderLevelMenu(); renderShop(); showScores(); updateHud(); draw();
 })(); 
 </script>
 </body>
