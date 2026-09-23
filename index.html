@@ -3,219 +3,418 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Muntjesjacht</title>
+<meta name="theme-color" content="#101827">
+<title>Muntjesjacht — level challenge</title>
 <style>
+  :root { color-scheme: dark; --ink:#f8fafc; --muted:#b6c2d3; --panel:#172338; --line:#33445f; --gold:#ffd84d; --blue:#38bdf8; --pink:#f472b6; }
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #111827; color: #f9fafb; font: 16px system-ui, sans-serif; padding: 24px 0; }
-  main { width: min(92vw, 620px); text-align: center; }
-  h1 { margin: 0 0 6px; color: #fde047; }
-  h2 { margin: 22px 0 8px; color: #fde047; font-size: 21px; }
-  p { margin: 6px 0 14px; color: #cbd5e1; }
-  #hud { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 auto 8px; max-width: 520px; font-weight: 700; }
-  #hud span { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; }
-  #message { min-height: 24px; margin: 8px 0; color: #fde68a; font-weight: 700; }
-  canvas { display: block; width: 100%; max-width: 520px; margin: auto; border: 3px solid #475569; border-radius: 14px; background: #1e293b; }
-  .player-form { display: flex; justify-content: center; gap: 8px; align-items: center; flex-wrap: wrap; margin: 14px auto 0; }
-  input { width: min(240px, 60vw); padding: 10px 12px; border: 2px solid #475569; border-radius: 9px; background: #1e293b; color: white; font: inherit; }
-  button { padding: 10px 18px; border: 0; border-radius: 9px; background: #fde047; color: #1f2937; font: inherit; font-weight: 800; cursor: pointer; }
-  button:hover { background: #facc15; }
-  #leaderboard { width: min(100%, 420px); margin: 0 auto; border-collapse: collapse; background: #1e293b; border-radius: 10px; overflow: hidden; }
-  #leaderboard th, #leaderboard td { padding: 9px 12px; border-bottom: 1px solid #334155; text-align: left; }
-  #leaderboard th:first-child, #leaderboard td:first-child { width: 52px; text-align: center; }
-  #leaderboard th:last-child, #leaderboard td:last-child { text-align: right; }
-  #leaderboard tr:last-child td { border-bottom: 0; }
-  .touch-controls { display: none; width: 168px; margin: 14px auto 4px; grid-template-columns: repeat(3, 1fr); gap: 7px; touch-action: none; }
-  .touch-controls button { margin: 0; min-height: 52px; padding: 8px; font-size: 22px; }
-  .touch-controls [data-dir="up"] { grid-column: 2; }
-  .touch-controls [data-dir="left"] { grid-column: 1; grid-row: 2; }
-  .touch-controls [data-dir="down"] { grid-column: 2; grid-row: 2; }
-  .touch-controls [data-dir="right"] { grid-column: 3; grid-row: 2; }
-  @media (hover: none), (max-width: 700px) {
-    .touch-controls { display: grid; }
-    body { padding: 14px 0; }
-  }
-  .note { font-size: 13px; color: #94a3b8; }
+  body { margin:0; min-height:100vh; padding:28px 14px 36px; display:grid; place-items:center; color:var(--ink); font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; background:radial-gradient(ellipse at 50% -15%,#243c60 0,#111d30 45%,#0b1220 100%); }
+  main { width:min(100%,760px); }
+  header { text-align:center; margin:0 auto 18px; }
+  .eyebrow { display:inline-block; margin-bottom:5px; color:#a8bedb; font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+  h1 { margin:0; color:var(--gold); font-size:clamp(32px,7vw,48px); line-height:1.08; letter-spacing:-.035em; text-shadow:0 4px 28px #facc1540; }
+  header p { margin:10px auto 0; max-width:600px; color:var(--muted); }
+  .card { overflow:hidden; padding:clamp(14px,3vw,24px); border:1px solid #42536c; border-radius:22px; background:linear-gradient(145deg,#1a2940ed,#101a2bed); box-shadow:0 24px 70px #0007, inset 0 1px #ffffff12; }
+  .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; margin:0 auto 12px; }
+  .stat { min-width:0; padding:9px 8px 10px; border:1px solid var(--line); border-radius:13px; background:#0e192a; text-align:center; }
+  .stat small { display:block; margin-bottom:1px; color:#9eafc5; font-size:10px; font-weight:800; letter-spacing:.11em; }
+  .stat strong { display:block; overflow:hidden; color:#fff; font-size:clamp(15px,3.2vw,21px); white-space:nowrap; text-overflow:ellipsis; }
+  #level { color:var(--gold); }
+  #progress { color:#86efac; }
+  #time.low { color:#fca5a5; animation:pulse .7s infinite alternate; }
+  #lives { letter-spacing:.08em; font-size:clamp(15px,3vw,19px); }
+  @keyframes pulse { to { opacity:.55; } }
+  .board-wrap { position:relative; width:100%; }
+  canvas { display:block; width:100%; height:auto; aspect-ratio:3/2; border:2px solid #536783; border-radius:16px; background:#111e32; box-shadow:inset 0 0 36px #0005; }
+  .overlay { position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:10px; padding:24px; border-radius:16px; background:#091323c9; text-align:center; backdrop-filter:blur(4px); }
+  .overlay.hidden { display:none; }
+  .overlay-icon { font-size:42px; line-height:1; filter:drop-shadow(0 5px 14px #0009); }
+  .overlay h2 { margin:0; color:var(--gold); font-size:clamp(22px,5vw,32px); }
+  .overlay p { max-width:440px; margin:0; color:#e2e8f0; }
+  button { min-height:44px; padding:10px 17px; border:0; border-radius:11px; background:linear-gradient(180deg,#ffe77a,#facc15); color:#202a3b; font:inherit; font-weight:850; cursor:pointer; box-shadow:0 4px 0 #a8790c; transition:transform .12s,filter .12s; }
+  button:hover { filter:brightness(1.07); transform:translateY(-1px); }
+  button:active { transform:translateY(2px); box-shadow:0 2px 0 #a8790c; }
+  button:focus-visible,input:focus-visible { outline:3px solid #7dd3fc; outline-offset:3px; }
+  .overlay button { margin-top:3px; }
+  .help { display:flex; justify-content:space-between; gap:10px; margin:9px 2px 0; color:#aab8cb; font-size:13px; }
+  .help strong { color:#e2e8f0; }
+  .message { min-height:25px; margin:7px 0 0; color:#fde68a; font-size:14px; font-weight:750; text-align:center; }
+  .controls-row { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:10px; }
+  .pause { min-width:120px; background:#24364f; color:#f8fafc; box-shadow:0 4px 0 #101a29; }
+  .pause:hover { background:#314968; }
+  .touch-controls { display:none; width:174px; margin:12px auto 3px; grid-template-columns:repeat(3,1fr); gap:7px; touch-action:none; user-select:none; }
+  .touch-controls button { min-height:52px; padding:7px; border:1px solid #576b86; background:linear-gradient(180deg,#2b405d,#1c2c43); color:white; font-size:22px; box-shadow:0 4px 0 #0a1220; touch-action:none; }
+  .touch-controls [data-dir="up"] { grid-column:2; }
+  .touch-controls [data-dir="left"] { grid-column:1; grid-row:2; }
+  .touch-controls [data-dir="down"] { grid-column:2; grid-row:2; }
+  .touch-controls [data-dir="right"] { grid-column:3; grid-row:2; }
+  .player-form { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:9px; margin:14px auto 0; }
+  .player-form label { color:#dbe5f2; font-weight:700; }
+  input { width:min(230px,60vw); min-height:44px; padding:9px 12px; border:1px solid #52647d; border-radius:10px; background:#0e192a; color:#fff; font:inherit; }
+  input::placeholder { color:#8393a8; }
+  .secondary { background:#23354d; color:#f1f5f9; box-shadow:0 4px 0 #101a29; }
+  .secondary:hover { background:#314968; }
+  .scores-card { margin-top:18px; padding:17px clamp(14px,3vw,22px); border:1px solid #33445f; border-radius:18px; background:#111d2eeb; }
+  .scores-card h2 { margin:0 0 10px; color:var(--gold); font-size:20px; }
+  #leaderboard { width:100%; border-collapse:collapse; overflow:hidden; border-radius:10px; }
+  #leaderboard th,#leaderboard td { padding:9px 11px; border-bottom:1px solid #293a53; text-align:left; }
+  #leaderboard th { color:#aebdd0; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+  #leaderboard th:first-child,#leaderboard td:first-child { width:46px; text-align:center; }
+  #leaderboard th:last-child,#leaderboard td:last-child { text-align:right; }
+  #leaderboard tr:last-child td { border-bottom:0; }
+  .note { margin:10px 0 0; color:#94a3b8; font-size:12px; text-align:center; }
+  @media (hover:none),(max-width:700px) { .touch-controls { display:grid; } }
+  @media (max-width:520px) { body { padding:16px 10px 24px; } .stats { gap:5px; } .stat { padding:8px 3px; } .help { flex-direction:column; text-align:center; gap:3px; } .card { border-radius:18px; } .player-form { gap:7px; } }
+  @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>🪙 Muntjesjacht</h1>
-  <p>Pak muntjes met de pijltjestoetsen, WASD of de knoppen. Elke snelle vangst bouwt je combo op!</p>
-  <div id="hud"><span>🏅 Score: <b id="score">0</b></span><span>🔥 Combo: <b id="combo">0x</b></span><span>⏱️ Tijd: <b id="time">30</b></span></div>
-  <canvas id="game" width="520" height="360" aria-label="Spelveld"></canvas>
-  <div class="touch-controls" aria-label="Bediening">
-    <button type="button" data-dir="up" aria-label="Omhoog">▲</button>
-    <button type="button" data-dir="left" aria-label="Links">◀</button>
-    <button type="button" data-dir="down" aria-label="Omlaag">▼</button>
-    <button type="button" data-dir="right" aria-label="Rechts">▶</button>
-  </div>
-  <div class="player-form">
-    <label for="playerName">Jouw naam:</label>
-    <input id="playerName" maxlength="16" placeholder="Typ je naam" autocomplete="nickname">
-    <button id="start">Start / opnieuw</button>
-  </div>
-  <p id="message" aria-live="polite">Gouden sterren geven bonuspunten en extra tijd!</p>
-  <h2>🏆 Scorebord</h2>
-  <table id="leaderboard" aria-label="Beste scores">
-    <thead><tr><th>#</th><th>Naam</th><th>Score</th></tr></thead>
-    <tbody id="scores"></tbody>
-  </table>
-  <p class="note">Scores worden bewaard in deze browser op dit apparaat.</p>
+  <header>
+    <span class="eyebrow">Een snel spelletje voor iedereen</span>
+    <h1>🪙 Muntjesjacht</h1>
+    <p>Verzamel de muntjes voor je tijd op is. Ontwijk de vijanden, houd je hartjes over en speel steeds moeilijkere levels!</p>
+  </header>
+  <section class="card" aria-label="Spel">
+    <div class="stats" aria-live="polite">
+      <div class="stat"><small>LEVEL</small><strong id="level">1</strong></div>
+      <div class="stat"><small>MUNTJES</small><strong id="progress">0 / 8</strong></div>
+      <div class="stat"><small>TIJD</small><strong id="time">48</strong></div>
+      <div class="stat"><small>LEVENS</small><strong id="lives">❤️❤️❤️</strong></div>
+    </div>
+    <div class="board-wrap">
+      <canvas id="game" width="600" height="400" aria-label="Spelveld. Verzamel muntjes en ontwijk de vijanden."></canvas>
+      <div class="overlay" id="overlay" role="status" aria-live="polite">
+        <span class="overlay-icon" id="overlayIcon">🪙</span>
+        <h2 id="overlayTitle">Klaar voor de jacht?</h2>
+        <p id="overlayText">Verzamel 8 muntjes voor de tijd om is. Je hebt 3 hartjes. Raak geen vijand!</p>
+        <button type="button" id="overlayAction">Start spel</button>
+      </div>
+    </div>
+    <div class="help"><span><strong>Bewegen:</strong> pijltjestoetsen of WASD</span><span><strong>Doel:</strong> muntjes pakken, vijanden ontwijken</span></div>
+    <div class="message" id="message" aria-live="polite">Tip: beweeg in korte bochten om de vijanden te ontwijken.</div>
+    <div class="controls-row"><button type="button" class="pause" id="pauseButton" hidden>⏸ Pauze</button></div>
+    <div class="touch-controls" aria-label="Aanraakbediening">
+      <button type="button" data-dir="up" aria-label="Omhoog">▲</button>
+      <button type="button" data-dir="left" aria-label="Links">◀</button>
+      <button type="button" data-dir="down" aria-label="Omlaag">▼</button>
+      <button type="button" data-dir="right" aria-label="Rechts">▶</button>
+    </div>
+    <div class="player-form">
+      <label for="playerName">Jouw naam:</label>
+      <input id="playerName" maxlength="16" placeholder="Typ je naam" autocomplete="nickname">
+      <button type="button" id="startButton">Start / opnieuw</button>
+    </div>
+  </section>
+  <section class="scores-card">
+    <h2>🏆 Beste scores op dit apparaat</h2>
+    <table id="leaderboard" aria-label="Beste scores op dit apparaat">
+      <thead><tr><th>#</th><th>Naam</th><th>Punten</th></tr></thead>
+      <tbody id="scores"></tbody>
+    </table>
+    <p class="note">Scores worden alleen in deze browser bewaard en zijn niet gedeeld met je vrienden.</p>
+  </section>
 </main>
 <script>
-const canvas = document.querySelector('#game');
-const ctx = canvas.getContext('2d');
-const scoreLabel = document.querySelector('#score');
-const timeLabel = document.querySelector('#time');
-const nameInput = document.querySelector('#playerName');
-const keys = new Set();
-const scoreStorageKey = 'muntjesjacht-scores-v1';
-let player, coin, bonusCoin, score, seconds, active, timer, playerName = '';
-let combo = 0, comboExpiresAt = 0, bonusExpiresAt = 0, nextBonusAt = 0;
-const comboLabel = document.querySelector('#combo');
-const messageLabel = document.querySelector('#message');
-const size = 22;
-nameInput.value = localStorage.getItem('muntjesjacht-player-name') || '';
-function getScores() {
-  try { return JSON.parse(localStorage.getItem(scoreStorageKey) || '[]'); }
-  catch { return []; }
-}
-function showScores() {
-  const body = document.querySelector('#scores');
-  body.replaceChildren();
-  getScores().slice(0, 10).forEach((entry, index) => {
-    const row = document.createElement('tr');
-    const rank = document.createElement('td'); rank.textContent = index + 1;
-    const name = document.createElement('td'); name.textContent = entry.name;
-    const points = document.createElement('td'); points.textContent = entry.score;
-    row.append(rank, name, points); body.append(row);
+(function () {
+  'use strict';
+  const canvas = document.querySelector('#game');
+  const ctx = canvas.getContext('2d');
+  const levelLabel = document.querySelector('#level');
+  const progressLabel = document.querySelector('#progress');
+  const timeLabel = document.querySelector('#time');
+  const livesLabel = document.querySelector('#lives');
+  const nameInput = document.querySelector('#playerName');
+  const overlay = document.querySelector('#overlay');
+  const overlayIcon = document.querySelector('#overlayIcon');
+  const overlayTitle = document.querySelector('#overlayTitle');
+  const overlayText = document.querySelector('#overlayText');
+  const overlayAction = document.querySelector('#overlayAction');
+  const pauseButton = document.querySelector('#pauseButton');
+  const messageLabel = document.querySelector('#message');
+  const keys = new Set();
+  const scoreStorageKey = 'muntjesjacht-scores-v1';
+  const playerNameStorageKey = 'muntjesjacht-player-name';
+  const playerRadius = 13;
+  let gameState = 'ready';
+  let player = { x: canvas.width / 2, y: canvas.height / 2 };
+  let coin = { x: canvas.width * .7, y: canvas.height * .5 };
+  let enemies = [];
+  let level = 1, target = 8, collected = 0, score = 0, lives = 3;
+  let secondsLeft = 48, invulnerableFor = 0, lastFrameAt = 0, playerName = '', scoreSaved = false;
+  try { nameInput.value = localStorage.getItem(playerNameStorageKey) || ''; } catch (_) {}
+
+  function safeReadScores() {
+    try {
+      const value = JSON.parse(localStorage.getItem(scoreStorageKey) || '[]');
+      return Array.isArray(value) ? value.filter(function (item) {
+        return item && typeof item.name === 'string' && Number.isFinite(Number(item.score));
+      }) : [];
+    } catch (_) { return []; }
+  }
+  function showScores() {
+    const body = document.querySelector('#scores');
+    body.replaceChildren();
+    safeReadScores().sort(function (a, b) { return Number(b.score) - Number(a.score); }).slice(0, 10).forEach(function (entry, index) {
+      const row = document.createElement('tr');
+      const rank = document.createElement('td'); rank.textContent = String(index + 1);
+      const name = document.createElement('td'); name.textContent = entry.name;
+      const points = document.createElement('td'); points.textContent = String(entry.score);
+      row.append(rank, name, points); body.append(row);
+    });
+    if (!body.children.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td'); cell.colSpan = 3; cell.textContent = 'Nog geen scores — speel als eerste!';
+      row.append(cell); body.append(row);
+    }
+  }
+  function saveScore() {
+    if (scoreSaved) return;
+    scoreSaved = true;
+    const scores = safeReadScores();
+    scores.push({ name: playerName || 'Speler', score: score, level: level });
+    scores.sort(function (a, b) { return Number(b.score) - Number(a.score); });
+    try { localStorage.setItem(scoreStorageKey, JSON.stringify(scores.slice(0, 10))); } catch (_) {}
+    showScores();
+  }
+  function showOverlay(icon, title, text, buttonText) {
+    overlayIcon.textContent = icon;
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    overlayAction.textContent = buttonText;
+    overlay.classList.remove('hidden');
+  }
+  function hideOverlay() { overlay.classList.add('hidden'); }
+  function updateHud() {
+    levelLabel.textContent = String(level);
+    progressLabel.textContent = collected + ' / ' + target;
+    timeLabel.textContent = String(Math.max(0, Math.ceil(secondsLeft)));
+    timeLabel.classList.toggle('low', secondsLeft <= 10);
+    livesLabel.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+  }
+  function pointAwayFrom(points, gap) {
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const point = { x: 26 + Math.random() * (canvas.width - 52), y: 26 + Math.random() * (canvas.height - 52) };
+      if (points.every(function (other) { return !other || Math.hypot(point.x - other.x, point.y - other.y) >= gap; })) return point;
+    }
+    return { x: 40 + Math.random() * (canvas.width - 80), y: 40 + Math.random() * (canvas.height - 80) };
+  }
+  function makeEnemy(index) {
+    const point = pointAwayFrom([player, coin].concat(enemies), 145);
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 72 + Math.min(level, 12) * 10 + index * 5;
+    return { x: point.x, y: point.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, radius: 15 };
+  }
+  function placeCoin() { coin = pointAwayFrom([player].concat(enemies), 78); }
+  function beginLevel() {
+    collected = 0;
+    target = 8 + (level - 1) * 2;
+    secondsLeft = Math.max(28, 48 - (level - 1) * 4);
+    player = { x: canvas.width / 2, y: canvas.height / 2 };
+    enemies = [];
+    coin = { x: 45, y: 45 };
+    const enemyCount = Math.min(1 + level, 7);
+    for (let i = 0; i < enemyCount; i++) enemies.push(makeEnemy(i));
+    placeCoin();
+    invulnerableFor = 1.2;
+    gameState = 'playing';
+    lastFrameAt = 0;
+    pauseButton.hidden = false;
+    pauseButton.textContent = '⏸ Pauze';
+    hideOverlay();
+    showMessage('Pak ' + target + ' muntjes. Blijf uit de buurt van ' + enemyCount + ' vijand' + (enemyCount === 1 ? '!' : 'en!'));
+    updateHud();
+    draw();
+    requestAnimationFrame(frame);
+  }
+  function startGame() {
+    const enteredName = nameInput.value.trim().replace(/\s+/g, ' ');
+    if (!enteredName) {
+      nameInput.focus();
+      nameInput.setCustomValidity('Vul eerst je naam in om te spelen.');
+      nameInput.reportValidity();
+      return;
+    }
+    nameInput.setCustomValidity('');
+    playerName = enteredName.slice(0, 16);
+    nameInput.value = playerName;
+    try { localStorage.setItem(playerNameStorageKey, playerName); } catch (_) {}
+    level = 1; score = 0; lives = 3; scoreSaved = false;
+    keys.clear();
+    beginLevel();
+  }
+  function finishGame(message) {
+    if (gameState === 'lost') return;
+    gameState = 'lost';
+    keys.clear();
+    pauseButton.hidden = true;
+    saveScore();
+    showOverlay(lives > 0 ? '⏱️' : '💥', lives > 0 ? 'Tijd is om!' : 'Geen hartjes meer!', message + ' Je haalde level ' + level + ' en scoorde ' + score + ' punten.', 'Opnieuw spelen');
+    draw();
+  }
+  function completeLevel() {
+    gameState = 'levelComplete';
+    keys.clear();
+    pauseButton.hidden = true;
+    showOverlay('🎉', 'Level ' + level + ' gehaald!', 'Je hebt alle ' + target + ' muntjes verzameld en leeft nog. Klaar voor level ' + (level + 1) + '?', 'Level ' + (level + 1) + ' starten');
+    draw();
+  }
+  function pauseGame() {
+    if (gameState !== 'playing') return;
+    gameState = 'paused';
+    keys.clear();
+    pauseButton.textContent = '▶ Verder';
+    showOverlay('⏸️', 'Even pauze', 'Je tijd staat stil. Druk op verder als je klaar bent.', 'Verder spelen');
+    draw();
+  }
+  function resumeGame() {
+    if (gameState !== 'paused') return;
+    gameState = 'playing';
+    lastFrameAt = 0;
+    pauseButton.textContent = '⏸ Pauze';
+    hideOverlay();
+    requestAnimationFrame(frame);
+  }
+  function changeLife() {
+    if (invulnerableFor > 0 || gameState !== 'playing') return;
+    lives--;
+    invulnerableFor = 1.6;
+    updateHud();
+    if (lives <= 0) { finishGame('Een vijand raakte je.'); return; }
+    showMessage('Oeps! Een hartje kwijt. Je bent even beschermd — ontwijk ze!', '#fca5a5');
+  }
+  function update(dt) {
+    secondsLeft = Math.max(0, secondsLeft - dt);
+    invulnerableFor = Math.max(0, invulnerableFor - dt);
+    let dx = 0, dy = 0;
+    if (keys.has('ArrowUp') || keys.has('w')) dy--;
+    if (keys.has('ArrowDown') || keys.has('s')) dy++;
+    if (keys.has('ArrowLeft') || keys.has('a')) dx--;
+    if (keys.has('ArrowRight') || keys.has('d')) dx++;
+    if (dx && dy) { dx *= Math.SQRT1_2; dy *= Math.SQRT1_2; }
+    const playerSpeed = 205;
+    player.x = Math.max(playerRadius, Math.min(canvas.width - playerRadius, player.x + dx * playerSpeed * dt));
+    player.y = Math.max(playerRadius, Math.min(canvas.height - playerRadius, player.y + dy * playerSpeed * dt));
+
+    enemies.forEach(function (enemy) {
+      enemy.x += enemy.vx * dt;
+      enemy.y += enemy.vy * dt;
+      if (enemy.x < enemy.radius || enemy.x > canvas.width - enemy.radius) {
+        enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
+        enemy.vx *= -1;
+      }
+      if (enemy.y < enemy.radius || enemy.y > canvas.height - enemy.radius) {
+        enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y));
+        enemy.vy *= -1;
+      }
+      if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < playerRadius + enemy.radius - 2) changeLife();
+    });
+    if (gameState !== 'playing') return;
+    if (Math.hypot(player.x - coin.x, player.y - coin.y) < playerRadius + 11) {
+      collected++;
+      score += 10;
+      updateHud();
+      placeCoin();
+      showMessage('Lekker bezig! ' + (target - collected) + ' muntje' + (target - collected === 1 ? '' : 's') + ' tot het volgende level.', '#86efac');
+      if (collected >= target) { completeLevel(); return; }
+    }
+    if (secondsLeft <= 0) { finishGame('Je verzamelde ' + collected + ' van de ' + target + ' muntjes.'); return; }
+    updateHud();
+  }
+  function draw() {
+    const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    bg.addColorStop(0, '#152743'); bg.addColorStop(1, '#101a2b');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'rgba(148, 163, 184, .09)'; ctx.lineWidth = 1;
+    for (let x = 20; x < canvas.width; x += 40) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for (let y = 20; y < canvas.height; y += 40) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+    ctx.fillStyle = '#ffd84d'; ctx.shadowColor = '#facc15'; ctx.shadowBlur = 18;
+    ctx.beginPath(); ctx.arc(coin.x, coin.y, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = '#80590a'; ctx.font = 'bold 15px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('€', coin.x, coin.y + 1);
+
+    enemies.forEach(function (enemy, index) {
+      ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.rotate(Math.atan2(enemy.vy, enemy.vx) * .08);
+      ctx.shadowColor = '#fb7185'; ctx.shadowBlur = 13;
+      ctx.fillStyle = index % 2 ? '#e879f9' : '#fb7185';
+      ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = '#881337';
+      ctx.beginPath(); ctx.arc(-5, -2, 2.5, 0, Math.PI * 2); ctx.arc(5, -2, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#881337'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 6, 5, .15, Math.PI - .15); ctx.stroke();
+      ctx.restore();
+    });
+
+    const blink = invulnerableFor > 0 && Math.floor(invulnerableFor * 12) % 2 === 0;
+    if (!blink) {
+      ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 18; ctx.fillStyle = '#38bdf8';
+      ctx.beginPath(); ctx.arc(player.x, player.y, playerRadius, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = '#082f49';
+      ctx.beginPath(); ctx.arc(player.x - 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.arc(player.x + 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#082f49'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(player.x, player.y + 1.5, 4.2, .18, Math.PI - .18); ctx.stroke();
+    } else {
+      ctx.strokeStyle = 'rgba(125, 211, 252, .65)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(player.x, player.y, 21, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  function frame(timestamp) {
+    if (gameState !== 'playing') return;
+    if (!lastFrameAt) lastFrameAt = timestamp;
+    const dt = Math.min((timestamp - lastFrameAt) / 1000, .05);
+    lastFrameAt = timestamp;
+    update(dt);
+    draw();
+    if (gameState === 'playing') requestAnimationFrame(frame);
+  }
+  function clearInput() { keys.clear(); }
+  document.addEventListener('keydown', function (event) {
+    if (document.activeElement === nameInput) return;
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(event.key) && gameState === 'playing') event.preventDefault();
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(key)) keys.add(key);
+    if ((event.key === 'Escape' || event.key.toLowerCase() === 'p') && (gameState === 'playing' || gameState === 'paused')) {
+      if (gameState === 'playing') pauseGame(); else resumeGame();
+    }
   });
-  if (!body.children.length) {
-    const row = document.createElement('tr');
-    const cell = document.createElement('td'); cell.colSpan = 3; cell.textContent = 'Nog geen scores — speel als eerste!';
-    row.append(cell); body.append(row);
-  }
-}
-function saveScore() {
-  const scores = getScores();
-  scores.push({ name: playerName, score });
-  scores.sort((a, b) => b.score - a.score);
-  try { localStorage.setItem(scoreStorageKey, JSON.stringify(scores.slice(0, 10))); }
-  catch { /* Het spel blijft speelbaar als de browser opslag blokkeert. */ }
-  showScores();
-}
-function randomCoin(avoid = []) {
-  for (let attempt = 0; attempt < 30; attempt++) {
-    const spot = { x: 20 + Math.random() * (canvas.width - 40), y: 20 + Math.random() * (canvas.height - 40) };
-    if (avoid.filter(Boolean).every(point => Math.hypot(point.x - spot.x, point.y - spot.y) > 55)) return spot;
-  }
-  return { x: 30 + Math.random() * (canvas.width - 60), y: 30 + Math.random() * (canvas.height - 60) };
-}
-function showMessage(text, color = '#fde68a') {
-  messageLabel.textContent = text;
-  messageLabel.style.color = color;
-}
-function reset() {
-  const enteredName = nameInput.value.trim().replace(/\s+/g, ' ');
-  if (!enteredName) {
-    nameInput.focus();
-    nameInput.setCustomValidity('Vul eerst je naam in om te spelen.');
-    nameInput.reportValidity();
-    return;
-  }
-  nameInput.setCustomValidity('');
-  playerName = enteredName.slice(0, 16);
-  nameInput.value = playerName;
-  try { localStorage.setItem('muntjesjacht-player-name', playerName); } catch { /* optioneel bewaren */ }
-  clearInterval(timer);
-  player = { x: canvas.width / 2, y: canvas.height / 2 };
-  coin = randomCoin([player]); bonusCoin = null; score = 0; seconds = 30; active = true;
-  combo = 0; comboExpiresAt = 0; bonusExpiresAt = 0; nextBonusAt = Date.now() + 5000;
-  scoreLabel.textContent = score; timeLabel.textContent = seconds; comboLabel.textContent = '0x';
-  showMessage('Vang snel achter elkaar voor een hogere combo!');
-  timer = setInterval(() => {
-    seconds--; timeLabel.textContent = seconds;
-    const now = Date.now();
-    if (combo && now > comboExpiresAt) { combo = 0; comboLabel.textContent = '0x'; }
-    if (!bonusCoin && now >= nextBonusAt) {
-      bonusCoin = randomCoin([player, coin]); bonusExpiresAt = now + 5000;
-      showMessage('⭐ Bonusster! Pak hem snel voor +5 punten en +3 seconden!', '#f9a8d4');
-    } else if (bonusCoin && now >= bonusExpiresAt) {
-      bonusCoin = null; nextBonusAt = now + 5000;
-      showMessage('De bonusster is weg! Blijf muntjes pakken.');
-    }
-    if (seconds <= 0) { active = false; clearInterval(timer); saveScore(); draw(); }
-  }, 1000);
-  requestAnimationFrame(loop);
-}
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#334155';
-  for (let x = 20; x < canvas.width; x += 40) for (let y = 20; y < canvas.height; y += 40) ctx.fillRect(x, y, 2, 2);
-  if (active) {
-    ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(coin.x, coin.y, 11, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#a16207'; ctx.font = 'bold 14px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('€', coin.x, coin.y);
-    if (bonusCoin) {
-      ctx.shadowColor = '#f472b6'; ctx.shadowBlur = 18;
-      ctx.fillStyle = '#ec4899'; ctx.beginPath(); ctx.arc(bonusCoin.x, bonusCoin.y, 14, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0; ctx.fillStyle = '#fff'; ctx.font = 'bold 18px system-ui'; ctx.fillText('★', bonusCoin.x, bonusCoin.y + 1);
-    }
-  }
-  ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.roundRect(player.x - size/2, player.y - size/2, size, size, 7); ctx.fill();
-  ctx.fillStyle = '#0c4a6e'; ctx.beginPath(); ctx.arc(player.x - 4, player.y - 2, 2, 0, Math.PI*2); ctx.arc(player.x + 4, player.y - 2, 2, 0, Math.PI*2); ctx.fill();
-  if (!active) {
-    ctx.fillStyle = 'rgba(15, 23, 42, .82)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = 'bold 32px system-ui'; ctx.fillText(seconds === 0 ? 'Tijd is om!' : 'Klaar voor de jacht?', canvas.width/2, canvas.height/2 - 18);
-    ctx.font = '20px system-ui';
-    ctx.fillText(seconds === 0 ? `${playerName || 'Speler'} scoorde ${score} punten` : 'Vul je naam in en druk op Start!', canvas.width/2, canvas.height/2 + 24);
-  }
-}
-function loop() {
-  if (!active) return;
-  const speed = 4;
-  if (keys.has('ArrowUp') || keys.has('w')) player.y -= speed;
-  if (keys.has('ArrowDown') || keys.has('s')) player.y += speed;
-  if (keys.has('ArrowLeft') || keys.has('a')) player.x -= speed;
-  if (keys.has('ArrowRight') || keys.has('d')) player.x += speed;
-  player.x = Math.max(size/2, Math.min(canvas.width-size/2, player.x));
-  player.y = Math.max(size/2, Math.min(canvas.height-size/2, player.y));
-  const now = Date.now();
-  if (Math.hypot(player.x - coin.x, player.y - coin.y) < 25) {
-    combo = now <= comboExpiresAt ? Math.min(combo + 1, 5) : 1;
-    comboExpiresAt = now + 2400;
-    score += combo; scoreLabel.textContent = score; comboLabel.textContent = `${combo}x`;
-    coin = randomCoin([player, bonusCoin]);
-    showMessage(combo > 1 ? `🔥 ${combo}x combo! +${combo} punten` : '+1 punt — pak snel de volgende!', combo >= 4 ? '#facc15' : '#fde68a');
-  }
-  if (bonusCoin && Math.hypot(player.x - bonusCoin.x, player.y - bonusCoin.y) < 27) {
-    score += 5; seconds = Math.min(40, seconds + 3); scoreLabel.textContent = score; timeLabel.textContent = seconds;
-    bonusCoin = null; nextBonusAt = now + 7000 + Math.random() * 5000;
-    showMessage('✨ Bonusster gepakt: +5 punten en +3 seconden!', '#f9a8d4');
-  }
-  draw(); requestAnimationFrame(loop);
-}
-addEventListener('keydown', e => { if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); keys.add(e.key.toLowerCase()); });
-addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-nameInput.addEventListener('input', () => nameInput.setCustomValidity(''));
-document.querySelectorAll('.touch-controls button').forEach(button => {
+  document.addEventListener('keyup', function (event) {
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    keys.delete(key);
+  });
+  window.addEventListener('blur', clearInput);
+  document.addEventListener('visibilitychange', function () {
+    clearInput();
+    if (document.hidden && gameState === 'playing') pauseGame();
+  });
+  nameInput.addEventListener('input', function () { nameInput.setCustomValidity(''); });
+  document.querySelector('#startButton').addEventListener('click', startGame);
+  overlayAction.addEventListener('click', function () {
+    if (gameState === 'ready' || gameState === 'lost') startGame();
+    else if (gameState === 'paused') resumeGame();
+    else if (gameState === 'levelComplete') { level++; beginLevel(); }
+  });
+  pauseButton.addEventListener('click', function () {
+    if (gameState === 'playing') pauseGame();
+    else if (gameState === 'paused') resumeGame();
+  });
   const directionKeys = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-  const key = directionKeys[button.dataset.dir];
-  const release = event => { event.preventDefault(); keys.delete(key); };
-  button.addEventListener('pointerdown', event => {
-    event.preventDefault();
-    keys.add(key);
-    button.setPointerCapture(event.pointerId);
+  document.querySelectorAll('.touch-controls button').forEach(function (button) {
+    const key = directionKeys[button.dataset.dir];
+    function release(event) { if (event) event.preventDefault(); keys.delete(key); }
+    button.addEventListener('pointerdown', function (event) {
+      if (gameState !== 'playing') return;
+      event.preventDefault(); keys.add(key);
+      try { button.setPointerCapture(event.pointerId); } catch (_) {}
+    });
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', function () { keys.delete(key); });
   });
-  button.addEventListener('pointerup', release);
-  button.addEventListener('pointercancel', release);
-  button.addEventListener('lostpointercapture', () => keys.delete(key));
-});
-document.querySelector('#start').addEventListener('click', reset);
-showScores();
-draw();
+  showScores();
+  updateHud();
+  draw();
+})(); 
 </script>
 </body>
 </html>
-
-
