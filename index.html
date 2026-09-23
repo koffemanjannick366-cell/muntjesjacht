@@ -380,7 +380,7 @@
     [{x:.12,y:.22,w:.25,h:.08,type:'wall'},{x:.63,y:.22,w:.25,h:.08,type:'wall'},{x:.12,y:.7,w:.25,h:.08,type:'wall'},{x:.63,y:.7,w:.25,h:.08,type:'wall'},{x:.42,y:.12,w:.16,h:.09,type:'lava'}],
     [{x:.08,y:.38,w:.26,h:.12,type:'lava'},{x:.66,y:.5,w:.26,h:.12,type:'lava'},{x:.39,y:.2,w:.22,h:.08,type:'wall'},{x:.39,y:.72,w:.22,h:.08,type:'wall'}],
     [{x:.14,y:.16,w:.11,h:.19,type:'wall'},{x:.39,y:.12,w:.22,h:.1,type:'lava'},{x:.75,y:.18,w:.11,h:.19,type:'wall'},{x:.14,y:.65,w:.11,h:.19,type:'wall'},{x:.75,y:.65,w:.11,h:.19,type:'wall'}],
-    [{x:.1,y:.25,w:.24,h:.1,type:'wall'},{x:.66,y:.25,w:.24,h:.1,type:'wall'},{x:.1,y:.65,w:.24,h:.1,type:'wall'},{x:.66,y:.65,w:.24,h:.1,type:'wall'},{x:.42,y:.41,w:.16,h:.09,type:'lava'}],
+    [{x:.1,y:.25,w:.24,h:.1,type:'wall'},{x:.66,y:.25,w:.24,h:.1,type:'wall'},{x:.1,y:.65,w:.24,h:.1,type:'wall'},{x:.66,y:.65,w:.24,h:.1,type:'wall'},{x:.42,y:.34,w:.16,h:.08,type:'lava'}],
     [{x:.1,y:.17,w:.15,h:.12,type:'lava'},{x:.75,y:.17,w:.15,h:.12,type:'lava'},{x:.1,y:.71,w:.15,h:.12,type:'lava'},{x:.75,y:.71,w:.15,h:.12,type:'lava'},{x:.4,y:.28,w:.2,h:.09,type:'wall'},{x:.4,y:.63,w:.2,h:.09,type:'wall'}]
   ];
   function buildTerrain() { terrain={walls:[],lava:[]}; (mapTemplates[levels[level-1].map]||mapTemplates[0]).forEach(s=>terrain[s.type==='lava'?'lava':'walls'].push({x:s.x*canvas.width,y:s.y*canvas.height,w:s.w*canvas.width,h:s.h*canvas.height})); }
