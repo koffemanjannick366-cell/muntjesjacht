@@ -83,6 +83,12 @@
   .skin-choice span:first-child { font-weight:850; }
   .skin-choice span:last-child { color:#b0bfd2; font-size:12px; }
   @media (max-width:400px) { .level-grid,.skin-grid { grid-template-columns:1fr; } }
+  :root { --gold:#ffe066; --pink:#ff65a3; --blue:#52d6ff; --line:#415b7d; }
+  body { background:radial-gradient(ellipse at 18% 8%,#304c74 0,#17263f 37%,#090f1c 100%); }
+  header { margin-bottom:22px; }
+  h1 { letter-spacing:-.045em; text-shadow:0 0 30px #ffcf4d55,0 5px 0 #7c4d12; }
+  .card { border-color:#61789b; background:linear-gradient(145deg,#1c2e49f5,#0d1728f5); box-shadow:0 24px 70px #0008,0 0 35px #38bdf81a,inset 0 1px #ffffff1c; }
+  .stat,.wallet-pill { border-color:#425e82; background:linear-gradient(145deg,#122137,#0b1525); box-shadow:inset 0 1px #ffffff12; }
   .mode-switch { display:flex; justify-content:center; flex-wrap:wrap; gap:9px; margin:0 auto 13px; }
   .mode-button { background:#23354d; color:#f1f5f9; box-shadow:0 4px 0 #101a29; }
   .mode-button.active { background:linear-gradient(180deg,#ffe77a,#facc15); color:#202a3b; box-shadow:0 4px 0 #a8790c; }
@@ -105,7 +111,7 @@
   <header>
     <span class="eyebrow">Een snel spelletje voor iedereen</span>
     <h1>🪙 Muntjesjacht</h1>
-    <p>Verzamel de muntjes voor je tijd op is. Ontwijk de vijanden, houd je hartjes over en speel steeds moeilijkere levels!</p>
+    <p>Ren, verzamel schatten en ontwijk de hongerige monstertjes. Hoe ver kom jij?</p>
   </header>
   <section class="card" aria-label="Spel">
     <div class="mode-switch" aria-label="Kies een spelmodus"><button type="button" class="mode-button active" id="levelsModeButton" aria-pressed="true">🗺️ Levels</button><button type="button" class="mode-button" id="challengeModeButton" aria-pressed="false">♾️ Eindeloze uitdaging</button></div>
@@ -168,7 +174,7 @@
 <script>
 (function () {
   'use strict';
-  const totalLevels = 15;
+  const totalLevels = 20;
   const levels = [
     { name:'Startbos', icon:'🌲', goal:6, time:58, enemies:1, speed:82, sky:'#16334a', ground:'#112338', map:0 },
     { name:'Muntjesduin', icon:'🏜️', goal:8, time:55, enemies:2, speed:90, sky:'#493124', ground:'#2d2030', map:1 },
@@ -184,7 +190,12 @@
     { name:'Kristalgrot', icon:'💎', goal:20, time:41, enemies:6, speed:158, sky:'#194457', ground:'#111c31', map:3 },
     { name:'Stormzee', icon:'🌊', goal:21, time:41, enemies:7, speed:162, sky:'#173b55', ground:'#111c31', map:2 },
     { name:'Drakenberg', icon:'🏔️', goal:22, time:40, enemies:7, speed:166, sky:'#49313b', ground:'#211729', map:4 },
-    { name:'Koninklijke kluis', icon:'👑', goal:23, time:40, enemies:7, speed:170, sky:'#493a1b', ground:'#211f24', map:1 }
+    { name:'Koninklijke kluis', icon:'👑', goal:23, time:40, enemies:7, speed:170, sky:'#493a1b', ground:'#211f24', map:1 },
+    { name:'Maanbasis', icon:'🌙', goal:24, time:42, enemies:7, speed:172, sky:'#27324c', ground:'#13192a', map:5 },
+    { name:'Snoeplab', icon:'🍭', goal:25, time:42, enemies:7, speed:176, sky:'#512b55', ground:'#21172f', map:6 },
+    { name:'Jungletempel', icon:'🌴', goal:26, time:41, enemies:8, speed:180, sky:'#1e4934', ground:'#12261f', map:7 },
+    { name:'Piratenbaai', icon:'🏴‍☠️', goal:27, time:41, enemies:8, speed:184, sky:'#164254', ground:'#112432', map:8 },
+    { name:'Monsterbaas', icon:'👹', goal:28, time:42, enemies:8, speed:188, sky:'#542437', ground:'#271423', map:9 }
   ];
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d');
@@ -231,7 +242,15 @@
     { id:'sun', name:'Zonnetje', icon:'😇', color:'#fbbf24', price:75 },
     { id:'ghost', name:'Spookje', icon:'👻', color:'#c4b5fd', price:100 },
     { id:'mint', name:'Mint', icon:'🐸', color:'#2dd4bf', price:140 },
-    { id:'royal', name:'Koninklijk', icon:'👑', color:'#e879f9', price:200 }
+    { id:'royal', name:'Koninklijk', icon:'👑', color:'#e879f9', price:200 },
+    { id:'octo', name:'Octopus', icon:'🐙', color:'#fb7185', price:240 },
+    { id:'ninja', name:'Ninja', icon:'🥷', color:'#475569', price:270 },
+    { id:'robot', name:'Ruimterobot', icon:'🤖', color:'#94a3b8', price:300 },
+    { id:'bee', name:'Hommel', icon:'🐝', color:'#facc15', price:330 },
+    { id:'unicorn', name:'Eenhoorn', icon:'🦄', color:'#f0abfc', price:360 },
+    { id:'ice', name:'IJskristal', icon:'🧊', color:'#67e8f9', price:400 },
+    { id:'cactus', name:'Cactus', icon:'🌵', color:'#4ade80', price:440 },
+    { id:'cosmic', name:'Kosmos', icon:'🪐', color:'#a78bfa', price:500 }
   ];
   const playerRadius = 13;
   let gameState = 'ready';
@@ -357,7 +376,12 @@
     [{x:.12,y:.18,w:.09,h:.64,type:'wall'},{x:.79,y:.18,w:.09,h:.64,type:'wall'},{x:.39,y:.15,w:.22,h:.12,type:'wall'},{x:.39,y:.73,w:.22,h:.12,type:'wall'}],
     [{x:.12,y:.16,w:.2,h:.16,type:'lava'},{x:.68,y:.67,w:.2,h:.16,type:'lava'},{x:.39,y:.27,w:.22,h:.1,type:'wall'}],
     [{x:.2,y:.2,w:.1,h:.2,type:'wall'},{x:.7,y:.2,w:.1,h:.2,type:'wall'},{x:.2,y:.6,w:.1,h:.2,type:'wall'},{x:.7,y:.6,w:.1,h:.2,type:'wall'},{x:.42,y:.12,w:.16,h:.08,type:'lava'}],
-    [{x:.15,y:.3,w:.27,h:.08,type:'wall'},{x:.58,y:.3,w:.27,h:.08,type:'wall'},{x:.15,y:.62,w:.27,h:.08,type:'wall'},{x:.58,y:.62,w:.27,h:.08,type:'wall'},{x:.45,y:.16,w:.1,h:.12,type:'lava'}]
+    [{x:.15,y:.3,w:.27,h:.08,type:'wall'},{x:.58,y:.3,w:.27,h:.08,type:'wall'},{x:.15,y:.62,w:.27,h:.08,type:'wall'},{x:.58,y:.62,w:.27,h:.08,type:'wall'},{x:.45,y:.16,w:.1,h:.12,type:'lava'}],
+    [{x:.12,y:.22,w:.25,h:.08,type:'wall'},{x:.63,y:.22,w:.25,h:.08,type:'wall'},{x:.12,y:.7,w:.25,h:.08,type:'wall'},{x:.63,y:.7,w:.25,h:.08,type:'wall'},{x:.42,y:.12,w:.16,h:.09,type:'lava'}],
+    [{x:.08,y:.38,w:.26,h:.12,type:'lava'},{x:.66,y:.5,w:.26,h:.12,type:'lava'},{x:.39,y:.2,w:.22,h:.08,type:'wall'},{x:.39,y:.72,w:.22,h:.08,type:'wall'}],
+    [{x:.14,y:.16,w:.11,h:.19,type:'wall'},{x:.39,y:.12,w:.22,h:.1,type:'lava'},{x:.75,y:.18,w:.11,h:.19,type:'wall'},{x:.14,y:.65,w:.11,h:.19,type:'wall'},{x:.75,y:.65,w:.11,h:.19,type:'wall'}],
+    [{x:.1,y:.25,w:.24,h:.1,type:'wall'},{x:.66,y:.25,w:.24,h:.1,type:'wall'},{x:.1,y:.65,w:.24,h:.1,type:'wall'},{x:.66,y:.65,w:.24,h:.1,type:'wall'},{x:.42,y:.41,w:.16,h:.09,type:'lava'}],
+    [{x:.1,y:.17,w:.15,h:.12,type:'lava'},{x:.75,y:.17,w:.15,h:.12,type:'lava'},{x:.1,y:.71,w:.15,h:.12,type:'lava'},{x:.75,y:.71,w:.15,h:.12,type:'lava'},{x:.4,y:.28,w:.2,h:.09,type:'wall'},{x:.4,y:.63,w:.2,h:.09,type:'wall'}]
   ];
   function buildTerrain() { terrain={walls:[],lava:[]}; (mapTemplates[levels[level-1].map]||mapTemplates[0]).forEach(s=>terrain[s.type==='lava'?'lava':'walls'].push({x:s.x*canvas.width,y:s.y*canvas.height,w:s.w*canvas.width,h:s.h*canvas.height})); }
   function circleHitsRect(x,y,r,rect) { const nx=Math.max(rect.x,Math.min(x,rect.x+rect.w)),ny=Math.max(rect.y,Math.min(y,rect.y+rect.h));return Math.hypot(x-nx,y-ny)<r; }
@@ -493,14 +517,14 @@
     gameState = 'playing'; lastFrameAt = 0; pauseButton.textContent = '⏸ Pauze';
     hideOverlay(); updateHud(); requestAnimationFrame(frame);
   }
-  function changeLife() {
+  function changeLife(reason) {
     if (invulnerableFor > 0 || gameState !== 'playing') return;
     lives--; invulnerableFor = 1.6; updateHud();
-    if (lives <= 0) { finishGame('Een vijand raakte je.'); return; }
-    setMessage('Oeps! Een hartje kwijt. Je hebt nog bescherming — ontwijk ze!', '#fca5a5');
+    if (lives <= 0) { finishGame(reason || 'Een monstertje heeft je opgegeten.'); return; }
+    setMessage((reason || 'Een monstertje heeft je opgegeten!') + ' Een hartje kwijt — je hebt even bescherming.', '#fca5a5');
   }
   function spawnPowerup() {
-    const types = ['shield','clock','magnet'];
+    const types = ['shield','clock','magnet','snack'];
     const type = types[Math.floor(Math.random() * types.length)];
     powerup = { type: type, x: 0, y: 0, life: 5 };
     const point = safePoint([player, coin].concat(enemies), 105);
@@ -513,7 +537,8 @@
     activeBoost = {type:type,time:5};
     if (type === 'shield') { invulnerableFor=Math.max(invulnerableFor,5); setMessage('🛡️ Schild actief: 5 seconden veilig!','#7dd3fc'); }
     else if (type === 'clock') setMessage('⏰ Tijd vertraagt 5 seconden!','#c4b5fd');
-    else { magnetFor=5; setMessage('🧲 Muntjesmagneet actief: 5 seconden!','#f9a8d4'); }
+    else if (type === 'magnet') { magnetFor=5; setMessage('🧲 Muntjesmagneet actief: 5 seconden!','#f9a8d4'); }
+    else setMessage('🍪 Monsterkoekje! De monstertjes stoppen 5 seconden.','#fde68a');
   }
   function update(dt) {
     if (gameMode === 'challenge') {
@@ -547,14 +572,12 @@
     if(inLava(player,playerRadius))changeLife();
 
     enemies.forEach(function (enemy) {
-      enemy.x += enemy.vx * dt; enemy.y += enemy.vy * dt;
-      if (enemy.x < enemy.radius || enemy.x > canvas.width - enemy.radius) {
-        enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x)); enemy.vx *= -1;
+      if (!(activeBoost && activeBoost.type === 'snack')) {
+        enemy.x += enemy.vx * dt; enemy.y += enemy.vy * dt;
+        if (enemy.x < enemy.radius || enemy.x > canvas.width - enemy.radius) { enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x)); enemy.vx *= -1; }
+        if (enemy.y < enemy.radius || enemy.y > canvas.height - enemy.radius) { enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y)); enemy.vy *= -1; }
       }
-      if (enemy.y < enemy.radius || enemy.y > canvas.height - enemy.radius) {
-        enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y)); enemy.vy *= -1;
-      }
-      if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < playerRadius + enemy.radius - 2) changeLife();
+      if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < playerRadius + enemy.radius - 2) changeLife('Een monstertje heeft je opgegeten!');
     });
     if (gameState !== 'playing') return;
 
@@ -594,19 +617,28 @@
     ctx.fillStyle = '#80590a'; ctx.font = 'bold 15px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('€', coin.x, coin.y + 1);
 
     if (powerup) {
-      const colors = { shield:'#38bdf8', clock:'#a78bfa', magnet:'#f472b6' };
-      const icons = { shield:'🛡️', clock:'⏰', magnet:'🧲' };
+      const colors = { shield:'#38bdf8', clock:'#a78bfa', magnet:'#f472b6', snack:'#f59e0b' };
+      const icons = { shield:'🛡️', clock:'⏰', magnet:'🧲', snack:'🍪' };
       ctx.shadowColor = colors[powerup.type]; ctx.shadowBlur = 19; ctx.fillStyle = colors[powerup.type];
       ctx.beginPath(); ctx.arc(powerup.x, powerup.y, 18, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
       ctx.font = '20px system-ui'; ctx.fillText(icons[powerup.type], powerup.x, powerup.y + 1);
     }
 
+    const monsterColors = ['#fb7185','#a3e635','#c084fc','#f97316','#22d3ee','#f43f5e','#facc15','#34d399'];
     enemies.forEach(function (enemy, index) {
-      ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.shadowColor = '#fb7185'; ctx.shadowBlur = 12;
-      ctx.fillStyle = index % 2 ? '#e879f9' : '#fb7185';
-      ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-      ctx.fillStyle = '#881337'; ctx.beginPath(); ctx.arc(-5, -2, 2.5, 0, Math.PI * 2); ctx.arc(5, -2, 2.5, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#881337'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 6, 5, .15, Math.PI - .15); ctx.stroke();
+      const bob = Math.sin(performance.now() / 145 + index * 2.1) * 2.2;
+      const color = monsterColors[index % monsterColors.length];
+      ctx.save(); ctx.translate(enemy.x, enemy.y + bob); ctx.shadowColor = color; ctx.shadowBlur = 16; ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(-enemy.radius+2,-7); ctx.lineTo(-enemy.radius-3,-17-(index%3)); ctx.lineTo(-3,-10); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(3,-10); ctx.lineTo(enemy.radius+3,-18+(index%3)); ctx.lineTo(enemy.radius-2,-5); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0,1,enemy.radius,enemy.radius*.83,0,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(-5.5,-3,4,5,-.12,0,Math.PI*2); ctx.ellipse(5.5,-3,4,5,.12,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#172033'; ctx.beginPath(); ctx.arc(-4.5,-2.5,1.8,0,Math.PI*2); ctx.arc(6,-2.5,1.8,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#3a1028'; ctx.beginPath(); ctx.ellipse(0,7,7,5.2,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff7d6'; ctx.beginPath(); ctx.moveTo(-5,4); ctx.lineTo(-2.5,8); ctx.lineTo(0,4); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(1,4); ctx.lineTo(3.5,8); ctx.lineTo(6,4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#fb7185'; ctx.beginPath(); ctx.ellipse(1,10,3,2.4,.15,0,Math.PI*2); ctx.fill();
+      if(activeBoost&&activeBoost.type==='snack'){ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('💤',0,-23);}
       ctx.restore();
     });
 
@@ -617,6 +649,7 @@
       ctx.beginPath(); ctx.arc(player.x, player.y, playerRadius, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
       ctx.fillStyle = '#082f49'; ctx.beginPath(); ctx.arc(player.x - 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.arc(player.x + 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#082f49'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(player.x, player.y + 1.5, 4.2, .18, Math.PI - .18); ctx.stroke();
+      ctx.font='15px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(skin.icon,player.x,player.y-19);
     } else {
       ctx.strokeStyle = 'rgba(125, 211, 252, .65)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 21, 0, Math.PI * 2); ctx.stroke();
     }
