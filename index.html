@@ -172,14 +172,14 @@
     { name:'Ruimtestation', icon:'🚀', goal:14, time:46, enemies:3, speed:114, sky:'#291845', ground:'#17162f', map:4 },
     { name:'Vulkanen', icon:'🌋', goal:16, time:43, enemies:4, speed:122, sky:'#522427', ground:'#241729', map:2 },
     { name:'Spookkasteel', icon:'👻', goal:18, time:40, enemies:4, speed:130, sky:'#293349', ground:'#171c2b', map:1 },
-    { name:'Regenboogpad', icon:'🌈', goal:20, time:38, enemies:5, speed:138, sky:'#273a51', ground:'#14253a', map:3 },
-    { name:'Drakenhol', icon:'🐉', goal:22, time:36, enemies:5, speed:146, sky:'#3c233b', ground:'#20172c', map:4 },
-    { name:'Schatkamer', icon:'🏆', goal:24, time:34, enemies:6, speed:154, sky:'#493a1b', ground:'#211f24', map:0 },
-    { name:'Vergeten tempel', icon:'🛕', goal:25, time:33, enemies:6, speed:160, sky:'#30472e', ground:'#172419', map:1 },
-    { name:'Kristalgrot', icon:'💎', goal:26, time:32, enemies:7, speed:166, sky:'#194457', ground:'#111c31', map:3 },
-    { name:'Stormzee', icon:'🌊', goal:27, time:31, enemies:7, speed:172, sky:'#173b55', ground:'#111c31', map:2 },
-    { name:'Drakenberg', icon:'🏔️', goal:28, time:30, enemies:8, speed:178, sky:'#49313b', ground:'#211729', map:4 },
-    { name:'Koninklijke kluis', icon:'👑', goal:30, time:30, enemies:8, speed:184, sky:'#493a1b', ground:'#211f24', map:1 }
+    { name:'Regenboogpad', icon:'🌈', goal:20, time:40, enemies:5, speed:138, sky:'#273a51', ground:'#14253a', map:3 },
+    { name:'Drakenhol', icon:'🐉', goal:22, time:39, enemies:5, speed:146, sky:'#3c233b', ground:'#20172c', map:4 },
+    { name:'Schatkamer', icon:'🏆', goal:24, time:38, enemies:6, speed:154, sky:'#493a1b', ground:'#211f24', map:0 },
+    { name:'Vergeten tempel', icon:'🛕', goal:25, time:38, enemies:6, speed:160, sky:'#30472e', ground:'#172419', map:1 },
+    { name:'Kristalgrot', icon:'💎', goal:26, time:37, enemies:7, speed:166, sky:'#194457', ground:'#111c31', map:3 },
+    { name:'Stormzee', icon:'🌊', goal:27, time:37, enemies:7, speed:172, sky:'#173b55', ground:'#111c31', map:2 },
+    { name:'Drakenberg', icon:'🏔️', goal:28, time:36, enemies:8, speed:178, sky:'#49313b', ground:'#211729', map:4 },
+    { name:'Koninklijke kluis', icon:'👑', goal:30, time:36, enemies:8, speed:184, sky:'#493a1b', ground:'#211f24', map:1 }
   ];
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d');
@@ -359,7 +359,7 @@
       const point = { x: 24 + Math.random() * (canvas.width - 48), y: 24 + Math.random() * (canvas.height - 48) };
       if (blockedAt(point,16)||inLava(point,16)) continue;
       const clearance = minDistance(point, others);
-      if (clearance >= 150 + level*4) { coin = point; return; }
+      if (clearance >= 150 + level*2) { coin = point; return; }
       if (clearance > bestScore) { best = point; bestScore = clearance; }
     }
     coin = best || { x: 40, y: 40 };
