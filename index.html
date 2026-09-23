@@ -315,7 +315,6 @@
     lastShownSecond = Math.ceil(secondsLeft);
     timeLabel.classList.toggle('low', secondsLeft <= 10);
     livesLabel.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
-    updateWalletUI();
     levelPicker.disabled = false;
     levelPicker.setAttribute('aria-label', 'Level ' + level + ' van ' + totalLevels + '. Klik om vrijgespeelde levels te kiezen.');
   }
