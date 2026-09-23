@@ -276,7 +276,7 @@
     try {
       const value = JSON.parse(localStorage.getItem(scoreStorageKey) || '[]');
       return Array.isArray(value) ? value.filter(function (item) {
-        return item && typeof item.name === 'string' && Number.isFinite(Number(item.score));
+        return item && typeof item.name === 'string' && Number.isFinite(Number(item.score)) && Number(item.score) > 0;
       }) : [];
     } catch (_) { return []; }
   }
@@ -299,6 +299,7 @@
   function saveScore() {
     if (scoreSaved) return;
     scoreSaved = true;
+    if (score <= 0) { showScores(); return; }
     const scores = safeReadScores();
     scores.push({ name: playerName || 'Speler', score: score });
     scores.sort(function (a, b) { return Number(b.score) - Number(a.score); });
