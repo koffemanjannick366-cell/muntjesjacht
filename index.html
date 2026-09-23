@@ -326,9 +326,9 @@
   const mapTemplates = [
     [{x:.13,y:.24,w:.15,h:.12,type:'wall'},{x:.72,y:.62,w:.16,h:.12,type:'wall'},{x:.38,y:.76,w:.24,h:.08,type:'lava'}],
     [{x:.12,y:.18,w:.09,h:.64,type:'wall'},{x:.79,y:.18,w:.09,h:.64,type:'wall'},{x:.39,y:.15,w:.22,h:.12,type:'wall'},{x:.39,y:.73,w:.22,h:.12,type:'wall'}],
-    [{x:.12,y:.16,w:.2,h:.16,type:'lava'},{x:.68,y:.67,w:.2,h:.16,type:'lava'},{x:.39,y:.39,w:.22,h:.1,type:'wall'}],
+    [{x:.12,y:.16,w:.2,h:.16,type:'lava'},{x:.68,y:.67,w:.2,h:.16,type:'lava'},{x:.39,y:.27,w:.22,h:.1,type:'wall'}],
     [{x:.2,y:.2,w:.1,h:.2,type:'wall'},{x:.7,y:.2,w:.1,h:.2,type:'wall'},{x:.2,y:.6,w:.1,h:.2,type:'wall'},{x:.7,y:.6,w:.1,h:.2,type:'wall'},{x:.42,y:.12,w:.16,h:.08,type:'lava'}],
-    [{x:.15,y:.3,w:.27,h:.08,type:'wall'},{x:.58,y:.3,w:.27,h:.08,type:'wall'},{x:.15,y:.62,w:.27,h:.08,type:'wall'},{x:.58,y:.62,w:.27,h:.08,type:'wall'},{x:.45,y:.43,w:.1,h:.14,type:'lava'}]
+    [{x:.15,y:.3,w:.27,h:.08,type:'wall'},{x:.58,y:.3,w:.27,h:.08,type:'wall'},{x:.15,y:.62,w:.27,h:.08,type:'wall'},{x:.58,y:.62,w:.27,h:.08,type:'wall'},{x:.45,y:.16,w:.1,h:.12,type:'lava'}]
   ];
   function buildTerrain() { terrain={walls:[],lava:[]}; (mapTemplates[levels[level-1].map]||mapTemplates[0]).forEach(s=>terrain[s.type==='lava'?'lava':'walls'].push({x:s.x*canvas.width,y:s.y*canvas.height,w:s.w*canvas.width,h:s.h*canvas.height})); }
   function circleHitsRect(x,y,r,rect) { const nx=Math.max(rect.x,Math.min(x,rect.x+rect.w)),ny=Math.max(rect.y,Math.min(y,rect.y+rect.h));return Math.hypot(x-nx,y-ny)<r; }
