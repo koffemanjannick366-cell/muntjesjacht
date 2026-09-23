@@ -500,7 +500,7 @@
     persistProgress(); renderLevelMenu(); keys.clear(); pauseButton.hidden = true;
     if (level >= totalLevels) {
       gameState = 'won';
-      showOverlay('🏆', 'Alle 15 levels gehaald!', 'Geweldig, ' + (playerName || 'speler') + '! Je hebt de hele Muntjesjacht uitgespeeld met ' + score + ' punten.', 'Opnieuw spelen');
+      showOverlay('🏆', 'Alle 20 levels gehaald!', 'Geweldig, ' + (playerName || 'speler') + '! Je hebt de hele Muntjesjacht uitgespeeld met ' + score + ' punten.', 'Opnieuw spelen');
     } else {
       gameState = 'levelComplete';
       showOverlay('🎉', 'Level ' + level + ' gehaald!', 'Je hebt alle ' + target + ' muntjes verzameld. Level ' + (level + 1) + ' is vrijgespeeld!', 'Naar level ' + (level + 1));
