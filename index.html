@@ -308,7 +308,10 @@
   function selectGameMode(mode) {
     if (gameState === 'playing') { setMessage('Pauzeer of maak je potje eerst af om van modus te wisselen.'); return; }
     gameState = 'ready'; pauseButton.hidden = true; keys.clear();
-    gameMode = mode;
+    gameMode = mode; level = 1; collected = 0; score = 0; lives = 3;
+    target = mode === 'challenge' ? Number.MAX_SAFE_INTEGER : levels[0].goal;
+    secondsLeft = mode === 'challenge' ? 60 : levels[0].time;
+    activeBoost = null; powerup = null; invulnerableFor = 0; magnetFor = 0;
     levelsModeButton.classList.toggle('active', mode === 'levels'); levelsModeButton.setAttribute('aria-pressed', String(mode === 'levels'));
     challengeModeButton.classList.toggle('active', mode === 'challenge'); challengeModeButton.setAttribute('aria-pressed', String(mode === 'challenge'));
     challengeScores.hidden = mode !== 'challenge'; showScores(); updateHud();
