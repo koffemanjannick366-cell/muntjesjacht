@@ -261,7 +261,7 @@
     lastShownSecond = Math.ceil(secondsLeft);
     timeLabel.classList.toggle('low', secondsLeft <= 10);
     livesLabel.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
-    levelPicker.disabled = gameState === 'playing';
+    levelPicker.disabled = false;
     levelPicker.setAttribute('aria-label', 'Level ' + level + ' van ' + totalLevels + '. Klik om vrijgespeelde levels te kiezen.');
   }
   function minDistance(point, others) {
@@ -324,7 +324,7 @@
     });
   }
   function openLevelMenu() {
-    if (gameState === 'playing') return;
+    if (gameState === 'playing') pauseGame();
     renderLevelMenu();
     levelMenu.classList.remove('hidden');
     levelMenu.setAttribute('aria-hidden', 'false');
@@ -544,7 +544,8 @@
   nameInput.addEventListener('input', function () { nameInput.setCustomValidity(''); });
   document.querySelector('#startButton').addEventListener('click', function () { startGame(1); });
   overlayAction.addEventListener('click', function () {
-    if (gameState === 'ready' || gameState === 'lost' || gameState === 'won') startGame(gameState === 'ready' ? 1 : level);
+    if (gameState === 'ready' || gameState === 'won') startGame(1);
+    else if (gameState === 'lost') startGame(level);
     else if (gameState === 'paused') resumeGame();
     else if (gameState === 'levelComplete') { level++; beginLevel(); }
   });
