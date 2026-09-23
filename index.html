@@ -83,6 +83,9 @@
   .skin-choice span:first-child { font-weight:850; }
   .skin-choice span:last-child { color:#b0bfd2; font-size:12px; }
   @media (max-width:400px) { .level-grid,.skin-grid { grid-template-columns:1fr; } }
+  .mode-switch { display:flex; justify-content:center; flex-wrap:wrap; gap:9px; margin:0 auto 13px; }
+  .mode-button { background:#23354d; color:#f1f5f9; box-shadow:0 4px 0 #101a29; }
+  .mode-button.active { background:linear-gradient(180deg,#ffe77a,#facc15); color:#202a3b; box-shadow:0 4px 0 #a8790c; }
   .scores-card { margin-top:18px; padding:17px clamp(14px,3vw,22px); border:1px solid #33445f; border-radius:18px; background:#111d2eeb; }
   .scores-card h2 { margin:0 0 10px; color:var(--gold); font-size:20px; }
   #leaderboard { width:100%; border-collapse:collapse; overflow:hidden; border-radius:10px; }
@@ -105,11 +108,13 @@
     <p>Verzamel de muntjes voor je tijd op is. Ontwijk de vijanden, houd je hartjes over en speel steeds moeilijkere levels!</p>
   </header>
   <section class="card" aria-label="Spel">
+    <div class="mode-switch" aria-label="Kies een spelmodus"><button type="button" class="mode-button active" id="levelsModeButton" aria-pressed="true">🗺️ Levels</button><button type="button" class="mode-button" id="challengeModeButton" aria-pressed="false">♾️ Eindeloze uitdaging</button></div>
     <div class="stats" aria-live="polite">
       <button type="button" class="level-stat" id="levelPicker" aria-label="Kies een vrijgespeeld level">
         <small>LEVEL KIEZEN</small><strong id="level">1 / 15 ▾</strong><span class="level-name" id="levelName">🌲 Startbos</span>
       </button>
-      <div class="stat"><small>MUNTJES</small><strong id="progress">0 / 6</strong></div>
+      <div class="stat" id="challengeScoreStat" hidden><small>SCORE</small><strong id="challengeScore">0</strong></div>
+      <div class="stat"><small id="progressTitle">MUNTJES</small><strong id="progress">0 / 6</strong></div>
       <div class="stat"><small>TIJD</small><strong id="time">48</strong></div>
       <div class="stat"><small>LEVENS</small><strong id="lives">❤️❤️❤️</strong></div>
     </div>
@@ -151,8 +156,8 @@
       <div class="skin-grid" id="skinGrid"></div>
     </div>
   </div>
-  <section class="scores-card">
-    <h2>🏆 Beste scores op dit apparaat</h2>
+  <section class="scores-card" id="challengeScores" hidden>
+    <h2>🏆 Uitdaging — beste scores op dit apparaat</h2>
     <table id="leaderboard" aria-label="Beste scores op dit apparaat">
       <thead><tr><th>#</th><th>Naam</th><th>Punten</th></tr></thead>
       <tbody id="scores"></tbody>
@@ -174,12 +179,12 @@
     { name:'Spookkasteel', icon:'👻', goal:18, time:40, enemies:4, speed:130, sky:'#293349', ground:'#171c2b', map:1 },
     { name:'Regenboogpad', icon:'🌈', goal:20, time:40, enemies:5, speed:138, sky:'#273a51', ground:'#14253a', map:3 },
     { name:'Drakenhol', icon:'🐉', goal:22, time:39, enemies:5, speed:146, sky:'#3c233b', ground:'#20172c', map:4 },
-    { name:'Schatkamer', icon:'🏆', goal:24, time:38, enemies:6, speed:154, sky:'#493a1b', ground:'#211f24', map:0 },
-    { name:'Vergeten tempel', icon:'🛕', goal:25, time:38, enemies:6, speed:160, sky:'#30472e', ground:'#172419', map:1 },
-    { name:'Kristalgrot', icon:'💎', goal:26, time:37, enemies:7, speed:166, sky:'#194457', ground:'#111c31', map:3 },
-    { name:'Stormzee', icon:'🌊', goal:27, time:37, enemies:7, speed:172, sky:'#173b55', ground:'#111c31', map:2 },
-    { name:'Drakenberg', icon:'🏔️', goal:28, time:36, enemies:8, speed:178, sky:'#49313b', ground:'#211729', map:4 },
-    { name:'Koninklijke kluis', icon:'👑', goal:30, time:36, enemies:8, speed:184, sky:'#493a1b', ground:'#211f24', map:1 }
+    { name:'Schatkamer', icon:'🏆', goal:18, time:42, enemies:6, speed:150, sky:'#493a1b', ground:'#211f24', map:0 },
+    { name:'Vergeten tempel', icon:'🛕', goal:19, time:42, enemies:6, speed:154, sky:'#30472e', ground:'#172419', map:1 },
+    { name:'Kristalgrot', icon:'💎', goal:20, time:41, enemies:6, speed:158, sky:'#194457', ground:'#111c31', map:3 },
+    { name:'Stormzee', icon:'🌊', goal:21, time:41, enemies:7, speed:162, sky:'#173b55', ground:'#111c31', map:2 },
+    { name:'Drakenberg', icon:'🏔️', goal:22, time:40, enemies:7, speed:166, sky:'#49313b', ground:'#211729', map:4 },
+    { name:'Koninklijke kluis', icon:'👑', goal:23, time:40, enemies:7, speed:170, sky:'#493a1b', ground:'#211f24', map:1 }
   ];
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d');
@@ -205,8 +210,14 @@
   const shopBalance = document.querySelector('#shopBalance');
   const walletLabel = document.querySelector('#wallet');
   const skinNameLabel = document.querySelector('#skinName');
+  const challengeScoreLabel = document.querySelector('#challengeScore');
+  const challengeScoreStat = document.querySelector('#challengeScoreStat');
+  const progressTitle = document.querySelector('#progressTitle');
+  const challengeScores = document.querySelector('#challengeScores');
+  const levelsModeButton = document.querySelector('#levelsModeButton');
+  const challengeModeButton = document.querySelector('#challengeModeButton');
   const keys = new Set();
-  const scoreStorageKey = 'muntjesjacht-scores-v1';
+  const scoreStorageKey = 'muntjesjacht-challenge-scores-v1';
   const playerNameStorageKey = 'muntjesjacht-player-name';
   const progressStorageKey = 'muntjesjacht-level-progress-v1';
   const walletStorageKey = 'muntjesjacht-wallet-v1';
@@ -224,6 +235,7 @@
   ];
   const playerRadius = 13;
   let gameState = 'ready';
+  let gameMode = 'levels', challengeElapsed = 0, challengeWave = 0;
   let player = { x: canvas.width / 2, y: canvas.height / 2 };
   let coin = { x: canvas.width * .7, y: canvas.height * .5 };
   let powerup = null, activeBoost = null;
@@ -288,10 +300,20 @@
     if (scoreSaved) return;
     scoreSaved = true;
     const scores = safeReadScores();
-    scores.push({ name: playerName || 'Speler', score: score, level: level });
+    scores.push({ name: playerName || 'Speler', score: score });
     scores.sort(function (a, b) { return Number(b.score) - Number(a.score); });
     try { localStorage.setItem(scoreStorageKey, JSON.stringify(scores.slice(0, 10))); } catch (_) {}
     showScores();
+  }
+  function selectGameMode(mode) {
+    if (gameState === 'playing') { setMessage('Pauzeer of maak je potje eerst af om van modus te wisselen.'); return; }
+    if (gameState === 'paused') { gameState = 'ready'; pauseButton.hidden = true; keys.clear(); }
+    gameMode = mode;
+    levelsModeButton.classList.toggle('active', mode === 'levels'); levelsModeButton.setAttribute('aria-pressed', String(mode === 'levels'));
+    challengeModeButton.classList.toggle('active', mode === 'challenge'); challengeModeButton.setAttribute('aria-pressed', String(mode === 'challenge'));
+    challengeScores.hidden = mode !== 'challenge'; showScores(); updateHud();
+    if (mode === 'challenge') showOverlay('♾️', 'Eindeloze uitdaging', 'Pak zoveel mogelijk muntjes in 60 seconden. Je score telt mee voor het scorebord; deze muntjes gaan niet naar de skinwinkel.', 'Start uitdaging');
+    else showOverlay('🪙', 'Klaar voor de jacht?', 'Verzamel de muntjes van het level voordat de tijd op is. Ontwijk de vijanden en lava!', 'Start level');
   }
   function setMessage(text, color) {
     messageLabel.textContent = text;
@@ -307,9 +329,13 @@
   function hideOverlay() { overlay.classList.add('hidden'); }
   function updateHud() {
     const data = levels[level - 1];
+    levelPicker.hidden = gameMode !== 'levels';
+    challengeScoreStat.hidden = gameMode !== 'challenge';
+    progressTitle.textContent = gameMode === 'challenge' ? 'MUNTJES GEPAKT' : 'MUNTJES';
+    progressLabel.textContent = gameMode === 'challenge' ? String(collected) : collected + ' / ' + target;
+    challengeScoreLabel.textContent = String(score);
     levelLabel.textContent = level + ' / ' + totalLevels + ' ▾';
     levelNameLabel.textContent = data.icon + ' ' + data.name;
-    progressLabel.textContent = collected + ' / ' + target;
     const visibleTime = String(Math.max(0, Math.ceil(secondsLeft)));
     if (timeLabel.textContent !== visibleTime) timeLabel.textContent = visibleTime;
     lastShownSecond = Math.ceil(secondsLeft);
@@ -349,7 +375,7 @@
     const point = safePoint(safe, 125);
     const angle = Math.random() * Math.PI * 2;
     const data = levels[level - 1];
-    const speed = data.speed + index * 4;
+    const speed = gameMode === 'challenge' ? 86 + Math.floor(challengeElapsed / 12) * 15 + index * 4 : data.speed + index * 4;
     return { x: point.x, y: point.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, radius: 15 };
   }
   function placeCoin() {
@@ -398,6 +424,12 @@
     const firstPlayable = levelGrid.querySelector('button:not(:disabled)');
     if (firstPlayable) firstPlayable.focus();
   }
+  function beginChallenge() {
+    level = 1; collected = 0; score = 0; target = Number.MAX_SAFE_INTEGER; secondsLeft = 60;
+    player = {x:canvas.width/2,y:canvas.height/2}; enemies=[]; powerup=null; activeBoost=null; buildTerrain(); coin={x:40,y:40};
+    enemies.push(makeEnemy(0)); placeCoin(); lives=3; invulnerableFor=1.25; magnetFor=0; coinPickupLock=0; powerupCooldown=5; challengeElapsed=0; challengeWave=0;
+    gameState='playing';lastFrameAt=0;lastShownSecond=-1;pauseButton.hidden=false;pauseButton.textContent='⏸ Pauze';hideOverlay();setMessage('Pak zoveel mogelijk muntjes! Je muntjes worden niet bewaard voor skins.');updateHud();draw();requestAnimationFrame(frame);
+  }
   function beginLevel() {
     const data = levels[level - 1];
     collected = 0; target = data.goal; secondsLeft = data.time;
@@ -422,21 +454,24 @@
     nameInput.setCustomValidity('');
     playerName = enteredName.slice(0, 16); nameInput.value = playerName;
     try { localStorage.setItem(playerNameStorageKey, playerName); } catch (_) {}
-    level = Math.max(1, Math.min(unlockedThrough, Number(startAt) || 1));
     score = 0; lives = 3; scoreSaved = false;
-    keys.clear(); beginLevel();
+    keys.clear();
+    if (gameMode === 'challenge') beginChallenge();
+    else { level = Math.max(1, Math.min(unlockedThrough, Number(startAt) || 1)); beginLevel(); }
   }
   function finishGame(message) {
     if (gameState === 'lost' || gameState === 'won') return;
-    gameState = 'lost'; keys.clear(); pauseButton.hidden = true; saveScore();
-    showOverlay(lives > 0 ? '⏱️' : '💥', lives > 0 ? 'Tijd is om!' : 'Geen hartjes meer!', message + ' Je haalde level ' + level + ' en scoorde ' + score + ' punten.', 'Opnieuw spelen');
+    gameState = 'lost'; keys.clear(); pauseButton.hidden = true;
+    if (gameMode === 'challenge') saveScore();
+    const result = gameMode === 'challenge' ? message + ' Je pakte ' + collected + ' muntjes en haalde ' + score + ' punten.' : message + ' Je haalde level ' + level + ' en scoorde ' + score + ' punten.';
+    showOverlay(lives > 0 ? '⏱️' : '💥', gameMode === 'challenge' ? 'Uitdaging voorbij!' : (lives > 0 ? 'Tijd is om!' : 'Geen hartjes meer!'), result, 'Opnieuw spelen');
     updateHud(); draw();
   }
   function completeLevel() {
     highestCompleted = Math.max(highestCompleted, level);
     persistProgress(); renderLevelMenu(); keys.clear(); pauseButton.hidden = true;
     if (level >= totalLevels) {
-      gameState = 'won'; saveScore();
+      gameState = 'won';
       showOverlay('🏆', 'Alle 15 levels gehaald!', 'Geweldig, ' + (playerName || 'speler') + '! Je hebt de hele Muntjesjacht uitgespeeld met ' + score + ' punten.', 'Opnieuw spelen');
     } else {
       gameState = 'levelComplete';
@@ -477,6 +512,11 @@
     else { magnetFor=5; setMessage('🧲 Muntjesmagneet actief: 5 seconden!','#f9a8d4'); }
   }
   function update(dt) {
+    if (gameMode === 'challenge') {
+      challengeElapsed += dt;
+      const newWave = Math.min(4, Math.floor(challengeElapsed / 12));
+      while (challengeWave < newWave) { enemies.push(makeEnemy(enemies.length)); challengeWave++; }
+    }
     if (activeBoost) { activeBoost.time=Math.max(0,activeBoost.time-dt); if(activeBoost.time<=0) activeBoost=null; }
     secondsLeft = Math.max(0, secondsLeft - dt*(activeBoost&&activeBoost.type==='clock'?.5:1));
     invulnerableFor = Math.max(0, invulnerableFor - dt);
@@ -524,10 +564,12 @@
     }
     if (powerup && !activeBoost && Math.hypot(player.x - powerup.x, player.y - powerup.y) < playerRadius + 17) collectPowerup();
     if (coinPickupLock <= 0 && Math.hypot(player.x - coin.x, player.y - coin.y) < playerRadius + 10) {
-      collected++; score += 10; wallet++; persistWallet(); coinPickupLock = .22;
+      collected++; score += 10;
+      if (gameMode === 'levels') { wallet++; persistWallet(); }
+      coinPickupLock = .22;
       placeCoin(); updateHud();
-      setMessage('Muntje gepakt! Nog ' + (target - collected) + ' te gaan.', '#86efac');
-      if (collected >= target) { completeLevel(); return; }
+      setMessage(gameMode === 'challenge' ? 'Muntje gepakt! Score: ' + score + ' punten.' : 'Muntje gepakt! Nog ' + (target - collected) + ' te gaan.', '#86efac');
+      if (gameMode === 'levels' && collected >= target) { completeLevel(); return; }
     }
     if (secondsLeft <= 0) { finishGame('Je verzamelde ' + collected + ' van de ' + target + ' muntjes.'); return; }
     updateHud();
@@ -611,6 +653,8 @@
   });
   nameInput.addEventListener('input', function () { nameInput.setCustomValidity(''); });
   document.querySelector('#startButton').addEventListener('click', function () { startGame(1); });
+  levelsModeButton.addEventListener('click',function(){selectGameMode('levels');});
+  challengeModeButton.addEventListener('click',function(){selectGameMode('challenge');});
   overlayAction.addEventListener('click', function () {
     if (gameState === 'ready' || gameState === 'won') startGame(1);
     else if (gameState === 'lost') startGame(level);
@@ -644,6 +688,7 @@
     button.addEventListener('lostpointercapture', function () { keys.delete(key); });
   });
   renderLevelMenu(); renderShop(); showScores(); updateHud(); draw();
+  challengeScores.hidden = true;
 })(); 
 </script>
 </body>
