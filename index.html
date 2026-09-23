@@ -54,6 +54,26 @@
   input::placeholder { color:#8393a8; }
   .secondary { background:#23354d; color:#f1f5f9; box-shadow:0 4px 0 #101a29; }
   .secondary:hover { background:#314968; }
+  .level-stat { width:100%; min-height:0; padding:9px 8px 10px; border:1px solid var(--line); border-radius:13px; background:#0e192a; color:var(--ink); font:inherit; box-shadow:none; text-align:center; }
+  .level-stat:hover { border-color:#facc15; background:#14243a; transform:translateY(-1px); filter:none; box-shadow:none; }
+  .level-stat:disabled { cursor:not-allowed; opacity:.7; }
+  .level-name { display:block; margin-top:2px; color:#aebdd0; font-size:11px; font-weight:650; }
+  .level-menu { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:16px; background:#050b16cc; backdrop-filter:blur(7px); }
+  .level-menu.hidden { display:none; }
+  .level-menu-card { width:min(100%,540px); max-height:min(88vh,720px); overflow:auto; padding:22px; border:1px solid #52647d; border-radius:20px; background:linear-gradient(145deg,#1a2940,#101a2b); box-shadow:0 25px 90px #000b; }
+  .level-menu-top { display:flex; align-items:start; justify-content:space-between; gap:12px; }
+  .level-menu h2 { margin:0; color:var(--gold); font-size:25px; }
+  .level-menu p { margin:5px 0 14px; color:var(--muted); }
+  .close-levels { min-height:38px; padding:6px 12px; background:#293b54; color:#fff; box-shadow:0 3px 0 #0a1220; }
+  .level-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .level-choice { display:flex; min-height:69px; flex-direction:column; align-items:flex-start; justify-content:center; gap:2px; padding:10px 12px; border:1px solid #42536c; border-radius:12px; background:#132238; color:#f8fafc; font:inherit; text-align:left; box-shadow:none; }
+  .level-choice:hover { border-color:#facc15; background:#1c304a; transform:translateY(-1px); box-shadow:none; }
+  .level-choice.completed { border-color:#3d8061; background:#122c2a; }
+  .level-choice:disabled { border-color:#273549; background:#111a28; color:#7f8da1; opacity:.78; cursor:not-allowed; transform:none; }
+  .level-choice span:first-child { font-weight:850; }
+  .level-choice span:last-child { color:#b0bfd2; font-size:12px; font-weight:600; }
+  .powerup-label { color:var(--pink); }
+  @media (max-width:400px) { .level-grid { grid-template-columns:1fr; } }
   .scores-card { margin-top:18px; padding:17px clamp(14px,3vw,22px); border:1px solid #33445f; border-radius:18px; background:#111d2eeb; }
   .scores-card h2 { margin:0 0 10px; color:var(--gold); font-size:20px; }
   #leaderboard { width:100%; border-collapse:collapse; overflow:hidden; border-radius:10px; }
@@ -77,7 +97,9 @@
   </header>
   <section class="card" aria-label="Spel">
     <div class="stats" aria-live="polite">
-      <div class="stat"><small>LEVEL</small><strong id="level">1</strong></div>
+      <button type="button" class="level-stat" id="levelPicker" aria-label="Kies een vrijgespeeld level">
+        <small>LEVEL KIEZEN</small><strong id="level">1 / 10 ▾</strong><span class="level-name" id="levelName">🌲 Startbos</span>
+      </button>
       <div class="stat"><small>MUNTJES</small><strong id="progress">0 / 8</strong></div>
       <div class="stat"><small>TIJD</small><strong id="time">48</strong></div>
       <div class="stat"><small>LEVENS</small><strong id="lives">❤️❤️❤️</strong></div>
@@ -106,6 +128,12 @@
       <button type="button" id="startButton">Start / opnieuw</button>
     </div>
   </section>
+  <div class="level-menu hidden" id="levelMenu" role="dialog" aria-modal="true" aria-labelledby="levelMenuTitle">
+    <div class="level-menu-card">
+      <div class="level-menu-top"><div><h2 id="levelMenuTitle">Kies een level</h2><p id="levelMenuProgress"></p></div><button type="button" class="close-levels" id="closeLevels" aria-label="Sluit levelkeuze">Sluiten</button></div>
+      <div class="level-grid" id="levelGrid"></div>
+    </div>
+  </div>
   <section class="scores-card">
     <h2>🏆 Beste scores op dit apparaat</h2>
     <table id="leaderboard" aria-label="Beste scores op dit apparaat">
@@ -118,9 +146,23 @@
 <script>
 (function () {
   'use strict';
+  const totalLevels = 10;
+  const levels = [
+    { name:'Startbos', icon:'🌲', goal:6, time:48, enemies:1, speed:78, sky:'#16334a', ground:'#112338' },
+    { name:'Muntjesduin', icon:'🏜️', goal:7, time:46, enemies:2, speed:86, sky:'#493124', ground:'#2d2030' },
+    { name:'Neonstad', icon:'🌆', goal:8, time:44, enemies:2, speed:94, sky:'#252053', ground:'#151936' },
+    { name:'IJsberg', icon:'❄️', goal:9, time:42, enemies:3, speed:102, sky:'#17405a', ground:'#10283f' },
+    { name:'Ruimtestation', icon:'🚀', goal:10, time:40, enemies:3, speed:110, sky:'#291845', ground:'#17162f' },
+    { name:'Vulkanen', icon:'🌋', goal:11, time:38, enemies:4, speed:118, sky:'#522427', ground:'#241729' },
+    { name:'Spookkasteel', icon:'👻', goal:12, time:36, enemies:4, speed:126, sky:'#293349', ground:'#171c2b' },
+    { name:'Regenboogpad', icon:'🌈', goal:13, time:34, enemies:5, speed:134, sky:'#273a51', ground:'#14253a' },
+    { name:'Drakenhol', icon:'🐉', goal:14, time:32, enemies:5, speed:142, sky:'#3c233b', ground:'#20172c' },
+    { name:'Schatkamer', icon:'🏆', goal:15, time:30, enemies:6, speed:150, sky:'#493a1b', ground:'#211f24' }
+  ];
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d');
   const levelLabel = document.querySelector('#level');
+  const levelNameLabel = document.querySelector('#levelName');
   const progressLabel = document.querySelector('#progress');
   const timeLabel = document.querySelector('#time');
   const livesLabel = document.querySelector('#lives');
@@ -132,18 +174,38 @@
   const overlayAction = document.querySelector('#overlayAction');
   const pauseButton = document.querySelector('#pauseButton');
   const messageLabel = document.querySelector('#message');
+  const levelPicker = document.querySelector('#levelPicker');
+  const levelMenu = document.querySelector('#levelMenu');
+  const levelGrid = document.querySelector('#levelGrid');
+  const levelMenuProgress = document.querySelector('#levelMenuProgress');
   const keys = new Set();
   const scoreStorageKey = 'muntjesjacht-scores-v1';
   const playerNameStorageKey = 'muntjesjacht-player-name';
+  const progressStorageKey = 'muntjesjacht-level-progress-v1';
   const playerRadius = 13;
   let gameState = 'ready';
   let player = { x: canvas.width / 2, y: canvas.height / 2 };
   let coin = { x: canvas.width * .7, y: canvas.height * .5 };
+  let powerup = null;
   let enemies = [];
-  let level = 1, target = 8, collected = 0, score = 0, lives = 3;
-  let secondsLeft = 48, invulnerableFor = 0, lastFrameAt = 0, playerName = '', scoreSaved = false;
+  let level = 1, collected = 0, score = 0, lives = 3;
+  let target = levels[0].goal, secondsLeft = levels[0].time;
+  let invulnerableFor = 0, magnetFor = 0, coinPickupLock = 0, powerupCooldown = 8;
+  let lastFrameAt = 0, lastShownSecond = -1, playerName = '', scoreSaved = false;
+  let highestCompleted = readProgress();
+  let unlockedThrough = Math.min(totalLevels, highestCompleted + 1);
   try { nameInput.value = localStorage.getItem(playerNameStorageKey) || ''; } catch (_) {}
 
+  function readProgress() {
+    try {
+      const saved = Number.parseInt(localStorage.getItem(progressStorageKey) || '0', 10);
+      return Number.isFinite(saved) ? Math.max(0, Math.min(totalLevels, saved)) : 0;
+    } catch (_) { return 0; }
+  }
+  function persistProgress() {
+    try { localStorage.setItem(progressStorageKey, String(highestCompleted)); } catch (_) {}
+    unlockedThrough = Math.min(totalLevels, highestCompleted + 1);
+  }
   function safeReadScores() {
     try {
       const value = JSON.parse(localStorage.getItem(scoreStorageKey) || '[]');
@@ -177,6 +239,10 @@
     try { localStorage.setItem(scoreStorageKey, JSON.stringify(scores.slice(0, 10))); } catch (_) {}
     showScores();
   }
+  function setMessage(text, color) {
+    messageLabel.textContent = text;
+    if (color) messageLabel.style.color = color;
+  }
   function showOverlay(icon, title, text, buttonText) {
     overlayIcon.textContent = icon;
     overlayTitle.textContent = title;
@@ -186,106 +252,181 @@
   }
   function hideOverlay() { overlay.classList.add('hidden'); }
   function updateHud() {
-    levelLabel.textContent = String(level);
+    const data = levels[level - 1];
+    levelLabel.textContent = level + ' / ' + totalLevels + ' ▾';
+    levelNameLabel.textContent = data.icon + ' ' + data.name;
     progressLabel.textContent = collected + ' / ' + target;
-    timeLabel.textContent = String(Math.max(0, Math.ceil(secondsLeft)));
+    const visibleTime = String(Math.max(0, Math.ceil(secondsLeft)));
+    if (timeLabel.textContent !== visibleTime) timeLabel.textContent = visibleTime;
+    lastShownSecond = Math.ceil(secondsLeft);
     timeLabel.classList.toggle('low', secondsLeft <= 10);
     livesLabel.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+    levelPicker.disabled = gameState === 'playing';
+    levelPicker.setAttribute('aria-label', 'Level ' + level + ' van ' + totalLevels + '. Klik om vrijgespeelde levels te kiezen.');
   }
-  function pointAwayFrom(points, gap) {
-    for (let attempt = 0; attempt < 80; attempt++) {
+  function minDistance(point, others) {
+    if (!others.length) return Infinity;
+    return Math.min.apply(null, others.map(function (other) { return Math.hypot(point.x - other.x, point.y - other.y); }));
+  }
+  function safePoint(others, preferredGap) {
+    let best = null, bestScore = -1;
+    for (let attempt = 0; attempt < 160; attempt++) {
       const point = { x: 26 + Math.random() * (canvas.width - 52), y: 26 + Math.random() * (canvas.height - 52) };
-      if (points.every(function (other) { return !other || Math.hypot(point.x - other.x, point.y - other.y) >= gap; })) return point;
+      const clearance = minDistance(point, others);
+      if (clearance >= preferredGap) return point;
+      if (clearance > bestScore) { best = point; bestScore = clearance; }
     }
-    return { x: 40 + Math.random() * (canvas.width - 80), y: 40 + Math.random() * (canvas.height - 80) };
+    return best || { x: canvas.width * .25, y: canvas.height * .25 };
   }
   function makeEnemy(index) {
-    const point = pointAwayFrom([player, coin].concat(enemies), 145);
+    const safe = [player, coin].concat(enemies);
+    const point = safePoint(safe, 125);
     const angle = Math.random() * Math.PI * 2;
-    const speed = 72 + Math.min(level, 12) * 10 + index * 5;
+    const data = levels[level - 1];
+    const speed = data.speed + index * 4;
     return { x: point.x, y: point.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, radius: 15 };
   }
-  function placeCoin() { coin = pointAwayFrom([player].concat(enemies), 78); }
+  function placeCoin() {
+    const others = [player].concat(enemies);
+    let best = null, bestScore = -1;
+    for (let attempt = 0; attempt < 180; attempt++) {
+      const point = { x: 24 + Math.random() * (canvas.width - 48), y: 24 + Math.random() * (canvas.height - 48) };
+      const clearance = minDistance(point, others);
+      if (clearance >= 142) { coin = point; return; }
+      if (clearance > bestScore) { best = point; bestScore = clearance; }
+    }
+    coin = best || { x: 40, y: 40 };
+  }
+  function closeLevelMenu() {
+    levelMenu.classList.add('hidden');
+    levelMenu.setAttribute('aria-hidden', 'true');
+    levelPicker.focus();
+  }
+  function renderLevelMenu() {
+    levelGrid.replaceChildren();
+    const left = totalLevels - highestCompleted;
+    levelMenuProgress.textContent = highestCompleted + ' van de ' + totalLevels + ' levels gehaald · nog ' + left + ' te halen.';
+    levels.forEach(function (data, index) {
+      const number = index + 1;
+      const button = document.createElement('button');
+      const playable = number <= unlockedThrough;
+      const completed = number <= highestCompleted;
+      button.type = 'button';
+      button.className = 'level-choice' + (completed ? ' completed' : '');
+      button.disabled = !playable;
+      const title = document.createElement('span');
+      title.textContent = (completed ? '↻ ' : playable ? '▶ ' : '🔒 ') + 'Level ' + number + ' · ' + data.icon + ' ' + data.name;
+      const status = document.createElement('span');
+      status.textContent = completed ? 'Gehaald — opnieuw spelen' : playable ? data.goal + ' muntjes · ' + data.enemies + ' vijand' + (data.enemies === 1 ? '' : 'en') : 'Verzamel nog ' + Math.max(1, number - unlockedThrough) + ' level' + (number - unlockedThrough === 1 ? '' : 's');
+      button.append(title, status);
+      if (playable) button.addEventListener('click', function () { closeLevelMenu(); startGame(number); });
+      levelGrid.append(button);
+    });
+  }
+  function openLevelMenu() {
+    if (gameState === 'playing') return;
+    renderLevelMenu();
+    levelMenu.classList.remove('hidden');
+    levelMenu.setAttribute('aria-hidden', 'false');
+    const firstPlayable = levelGrid.querySelector('button:not(:disabled)');
+    if (firstPlayable) firstPlayable.focus();
+  }
   function beginLevel() {
-    collected = 0;
-    target = 8 + (level - 1) * 2;
-    secondsLeft = Math.max(28, 48 - (level - 1) * 4);
+    const data = levels[level - 1];
+    collected = 0; target = data.goal; secondsLeft = data.time;
     player = { x: canvas.width / 2, y: canvas.height / 2 };
-    enemies = [];
-    coin = { x: 45, y: 45 };
-    const enemyCount = Math.min(1 + level, 7);
-    for (let i = 0; i < enemyCount; i++) enemies.push(makeEnemy(i));
+    enemies = []; powerup = null; coin = { x: 40, y: 40 };
+    for (let i = 0; i < data.enemies; i++) enemies.push(makeEnemy(i));
     placeCoin();
-    invulnerableFor = 1.2;
-    gameState = 'playing';
-    lastFrameAt = 0;
-    pauseButton.hidden = false;
-    pauseButton.textContent = '⏸ Pauze';
+    invulnerableFor = 1.25; magnetFor = 0; coinPickupLock = 0; powerupCooldown = 7 + Math.random() * 3;
+    gameState = 'playing'; lastFrameAt = 0; lastShownSecond = -1;
+    pauseButton.hidden = false; pauseButton.textContent = '⏸ Pauze';
     hideOverlay();
-    showMessage('Pak ' + target + ' muntjes. Blijf uit de buurt van ' + enemyCount + ' vijand' + (enemyCount === 1 ? '!' : 'en!'));
-    updateHud();
-    draw();
+    setMessage(data.icon + ' ' + data.name + ': pak ' + data.goal + ' muntjes en ontwijk ' + data.enemies + ' vijand' + (data.enemies === 1 ? '!' : 'en!'));
+    updateHud(); draw();
     requestAnimationFrame(frame);
   }
-  function startGame() {
+  function startGame(startAt) {
     const enteredName = nameInput.value.trim().replace(/\s+/g, ' ');
     if (!enteredName) {
-      nameInput.focus();
-      nameInput.setCustomValidity('Vul eerst je naam in om te spelen.');
-      nameInput.reportValidity();
-      return;
+      nameInput.focus(); nameInput.setCustomValidity('Vul eerst je naam in om te spelen.'); nameInput.reportValidity(); return;
     }
+    if (gameState === 'playing') return;
     nameInput.setCustomValidity('');
-    playerName = enteredName.slice(0, 16);
-    nameInput.value = playerName;
+    playerName = enteredName.slice(0, 16); nameInput.value = playerName;
     try { localStorage.setItem(playerNameStorageKey, playerName); } catch (_) {}
-    level = 1; score = 0; lives = 3; scoreSaved = false;
-    keys.clear();
-    beginLevel();
+    level = Math.max(1, Math.min(unlockedThrough, Number(startAt) || 1));
+    score = 0; lives = 3; scoreSaved = false;
+    keys.clear(); beginLevel();
   }
   function finishGame(message) {
-    if (gameState === 'lost') return;
-    gameState = 'lost';
-    keys.clear();
-    pauseButton.hidden = true;
-    saveScore();
+    if (gameState === 'lost' || gameState === 'won') return;
+    gameState = 'lost'; keys.clear(); pauseButton.hidden = true; saveScore();
     showOverlay(lives > 0 ? '⏱️' : '💥', lives > 0 ? 'Tijd is om!' : 'Geen hartjes meer!', message + ' Je haalde level ' + level + ' en scoorde ' + score + ' punten.', 'Opnieuw spelen');
-    draw();
+    updateHud(); draw();
   }
   function completeLevel() {
-    gameState = 'levelComplete';
-    keys.clear();
-    pauseButton.hidden = true;
-    showOverlay('🎉', 'Level ' + level + ' gehaald!', 'Je hebt alle ' + target + ' muntjes verzameld en leeft nog. Klaar voor level ' + (level + 1) + '?', 'Level ' + (level + 1) + ' starten');
-    draw();
+    highestCompleted = Math.max(highestCompleted, level);
+    persistProgress(); renderLevelMenu(); keys.clear(); pauseButton.hidden = true;
+    if (level >= totalLevels) {
+      gameState = 'won'; saveScore();
+      showOverlay('🏆', 'Alle 10 levels gehaald!', 'Geweldig, ' + (playerName || 'speler') + '! Je hebt de hele Muntjesjacht uitgespeeld met ' + score + ' punten.', 'Opnieuw spelen');
+    } else {
+      gameState = 'levelComplete';
+      showOverlay('🎉', 'Level ' + level + ' gehaald!', 'Je hebt alle ' + target + ' muntjes verzameld. Level ' + (level + 1) + ' is vrijgespeeld!', 'Naar level ' + (level + 1));
+    }
+    updateHud(); draw();
   }
   function pauseGame() {
     if (gameState !== 'playing') return;
-    gameState = 'paused';
-    keys.clear();
-    pauseButton.textContent = '▶ Verder';
-    showOverlay('⏸️', 'Even pauze', 'Je tijd staat stil. Druk op verder als je klaar bent.', 'Verder spelen');
-    draw();
+    gameState = 'paused'; keys.clear(); pauseButton.textContent = '▶ Verder';
+    showOverlay('⏸️', 'Even pauze', 'Je tijd staat stil. Druk op verder als je klaar bent.', 'Verder spelen'); updateHud(); draw();
   }
   function resumeGame() {
     if (gameState !== 'paused') return;
-    gameState = 'playing';
-    lastFrameAt = 0;
-    pauseButton.textContent = '⏸ Pauze';
-    hideOverlay();
-    requestAnimationFrame(frame);
+    gameState = 'playing'; lastFrameAt = 0; pauseButton.textContent = '⏸ Pauze';
+    hideOverlay(); updateHud(); requestAnimationFrame(frame);
   }
   function changeLife() {
     if (invulnerableFor > 0 || gameState !== 'playing') return;
-    lives--;
-    invulnerableFor = 1.6;
-    updateHud();
+    lives--; invulnerableFor = 1.6; updateHud();
     if (lives <= 0) { finishGame('Een vijand raakte je.'); return; }
-    showMessage('Oeps! Een hartje kwijt. Je bent even beschermd — ontwijk ze!', '#fca5a5');
+    setMessage('Oeps! Een hartje kwijt. Je hebt nog bescherming — ontwijk ze!', '#fca5a5');
+  }
+  function spawnPowerup() {
+    const types = ['shield','clock','magnet'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    powerup = { type: type, x: 0, y: 0, life: 8 };
+    const point = safePoint([player, coin].concat(enemies), 105);
+    powerup.x = point.x; powerup.y = point.y;
+    setMessage('Er is een power-up verschenen! Pak hem voor extra hulp.', '#f9a8d4');
+  }
+  function collectPowerup() {
+    const type = powerup.type;
+    powerup = null;
+    if (type === 'shield') {
+      invulnerableFor = Math.max(invulnerableFor, 6);
+      setMessage('🛡️ Schild actief: 6 seconden veilig!', '#7dd3fc');
+    } else if (type === 'clock') {
+      secondsLeft = Math.min(levels[level - 1].time + 12, secondsLeft + 8);
+      setMessage('⏰ Tijdboost: 8 seconden erbij!', '#c4b5fd');
+    } else {
+      magnetFor = 7;
+      setMessage('🧲 Muntjesmagneet actief: muntjes komen naar je toe!', '#f9a8d4');
+    }
   }
   function update(dt) {
     secondsLeft = Math.max(0, secondsLeft - dt);
     invulnerableFor = Math.max(0, invulnerableFor - dt);
+    magnetFor = Math.max(0, magnetFor - dt);
+    coinPickupLock = Math.max(0, coinPickupLock - dt);
+    if (powerup) {
+      powerup.life -= dt;
+      if (powerup.life <= 0) { powerup = null; powerupCooldown = 4 + Math.random() * 3; }
+    } else {
+      powerupCooldown -= dt;
+      if (powerupCooldown <= 0) spawnPowerup();
+    }
     let dx = 0, dy = 0;
     if (keys.has('ArrowUp') || keys.has('w')) dy--;
     if (keys.has('ArrowDown') || keys.has('s')) dy++;
@@ -297,52 +438,61 @@
     player.y = Math.max(playerRadius, Math.min(canvas.height - playerRadius, player.y + dy * playerSpeed * dt));
 
     enemies.forEach(function (enemy) {
-      enemy.x += enemy.vx * dt;
-      enemy.y += enemy.vy * dt;
+      enemy.x += enemy.vx * dt; enemy.y += enemy.vy * dt;
       if (enemy.x < enemy.radius || enemy.x > canvas.width - enemy.radius) {
-        enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
-        enemy.vx *= -1;
+        enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x)); enemy.vx *= -1;
       }
       if (enemy.y < enemy.radius || enemy.y > canvas.height - enemy.radius) {
-        enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y));
-        enemy.vy *= -1;
+        enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y)); enemy.vy *= -1;
       }
       if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < playerRadius + enemy.radius - 2) changeLife();
     });
     if (gameState !== 'playing') return;
-    if (Math.hypot(player.x - coin.x, player.y - coin.y) < playerRadius + 11) {
-      collected++;
-      score += 10;
-      updateHud();
-      placeCoin();
-      showMessage('Lekker bezig! ' + (target - collected) + ' muntje' + (target - collected === 1 ? '' : 's') + ' tot het volgende level.', '#86efac');
+
+    if (magnetFor > 0) {
+      const toPlayerX = player.x - coin.x, toPlayerY = player.y - coin.y;
+      const distance = Math.hypot(toPlayerX, toPlayerY);
+      if (distance > 27) {
+        const pull = Math.min(distance - 27, 125 * dt);
+        coin.x += toPlayerX / distance * pull; coin.y += toPlayerY / distance * pull;
+      }
+    }
+    if (powerup && Math.hypot(player.x - powerup.x, player.y - powerup.y) < playerRadius + 17) collectPowerup();
+    if (coinPickupLock <= 0 && Math.hypot(player.x - coin.x, player.y - coin.y) < playerRadius + 10) {
+      collected++; score += 10; coinPickupLock = .22;
+      placeCoin(); updateHud();
+      setMessage('Muntje gepakt! Nog ' + (target - collected) + ' te gaan.', '#86efac');
       if (collected >= target) { completeLevel(); return; }
     }
     if (secondsLeft <= 0) { finishGame('Je verzamelde ' + collected + ' van de ' + target + ' muntjes.'); return; }
     updateHud();
   }
   function draw() {
+    const data = levels[level - 1];
     const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    bg.addColorStop(0, '#152743'); bg.addColorStop(1, '#101a2b');
+    bg.addColorStop(0, data.sky); bg.addColorStop(1, data.ground);
     ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(148, 163, 184, .09)'; ctx.lineWidth = 1;
-    for (let x = 20; x < canvas.width; x += 40) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    ctx.strokeStyle = 'rgba(203, 213, 225, .08)'; ctx.lineWidth = 1;
+    for (let x = 20; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+    for (let y = 20; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+    ctx.fillStyle = '#ffd84d'; ctx.shadowColor = '#facc15'; ctx.shadowBlur = 17;
+    ctx.beginPath(); ctx.arc(coin.x, coin.y, 12, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#80590a'; ctx.font = 'bold 15px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('€', coin.x, coin.y + 1);
+
+    if (powerup) {
+      const colors = { shield:'#38bdf8', clock:'#a78bfa', magnet:'#f472b6' };
+      const icons = { shield:'🛡️', clock:'⏰', magnet:'🧲' };
+      ctx.shadowColor = colors[powerup.type]; ctx.shadowBlur = 19; ctx.fillStyle = colors[powerup.type];
+      ctx.beginPath(); ctx.arc(powerup.x, powerup.y, 18, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.font = '20px system-ui'; ctx.fillText(icons[powerup.type], powerup.x, powerup.y + 1);
     }
-    for (let y = 20; y < canvas.height; y += 40) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-    }
-    ctx.fillStyle = '#ffd84d'; ctx.shadowColor = '#facc15'; ctx.shadowBlur = 18;
-    ctx.beginPath(); ctx.arc(coin.x, coin.y, 12, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0; ctx.fillStyle = '#80590a'; ctx.font = 'bold 15px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('€', coin.x, coin.y + 1);
 
     enemies.forEach(function (enemy, index) {
-      ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.rotate(Math.atan2(enemy.vy, enemy.vx) * .08);
-      ctx.shadowColor = '#fb7185'; ctx.shadowBlur = 13;
+      ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.shadowColor = '#fb7185'; ctx.shadowBlur = 12;
       ctx.fillStyle = index % 2 ? '#e879f9' : '#fb7185';
       ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-      ctx.fillStyle = '#881337';
-      ctx.beginPath(); ctx.arc(-5, -2, 2.5, 0, Math.PI * 2); ctx.arc(5, -2, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#881337'; ctx.beginPath(); ctx.arc(-5, -2, 2.5, 0, Math.PI * 2); ctx.arc(5, -2, 2.5, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#881337'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 6, 5, .15, Math.PI - .15); ctx.stroke();
       ctx.restore();
     });
@@ -351,12 +501,10 @@
     if (!blink) {
       ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 18; ctx.fillStyle = '#38bdf8';
       ctx.beginPath(); ctx.arc(player.x, player.y, playerRadius, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-      ctx.fillStyle = '#082f49';
-      ctx.beginPath(); ctx.arc(player.x - 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.arc(player.x + 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#082f49'; ctx.beginPath(); ctx.arc(player.x - 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.arc(player.x + 4.5, player.y - 2, 2, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#082f49'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(player.x, player.y + 1.5, 4.2, .18, Math.PI - .18); ctx.stroke();
     } else {
-      ctx.strokeStyle = 'rgba(125, 211, 252, .65)'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(player.x, player.y, 21, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(125, 211, 252, .65)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 21, 0, Math.PI * 2); ctx.stroke();
     }
   }
   function frame(timestamp) {
@@ -364,13 +512,19 @@
     if (!lastFrameAt) lastFrameAt = timestamp;
     const dt = Math.min((timestamp - lastFrameAt) / 1000, .05);
     lastFrameAt = timestamp;
-    update(dt);
-    draw();
+    try {
+      update(dt);
+      draw();
+    } catch (error) {
+      console.error('Muntjesjacht update error:', error);
+      finishGame('Er ging iets mis. Je kunt veilig opnieuw starten.');
+      return;
+    }
     if (gameState === 'playing') requestAnimationFrame(frame);
   }
   function clearInput() { keys.clear(); }
   document.addEventListener('keydown', function (event) {
-    if (document.activeElement === nameInput) return;
+    if (document.activeElement === nameInput || !levelMenu.classList.contains('hidden')) return;
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(event.key) && gameState === 'playing') event.preventDefault();
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(key)) keys.add(key);
@@ -388,9 +542,9 @@
     if (document.hidden && gameState === 'playing') pauseGame();
   });
   nameInput.addEventListener('input', function () { nameInput.setCustomValidity(''); });
-  document.querySelector('#startButton').addEventListener('click', startGame);
+  document.querySelector('#startButton').addEventListener('click', function () { startGame(1); });
   overlayAction.addEventListener('click', function () {
-    if (gameState === 'ready' || gameState === 'lost') startGame();
+    if (gameState === 'ready' || gameState === 'lost' || gameState === 'won') startGame(gameState === 'ready' ? 1 : level);
     else if (gameState === 'paused') resumeGame();
     else if (gameState === 'levelComplete') { level++; beginLevel(); }
   });
@@ -398,7 +552,15 @@
     if (gameState === 'playing') pauseGame();
     else if (gameState === 'paused') resumeGame();
   });
-  const directionKeys = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+  levelPicker.addEventListener('click', openLevelMenu);
+  document.querySelector('#closeLevels').addEventListener('click', closeLevelMenu);
+  levelMenu.addEventListener('click', function (event) {
+    if (event.target === levelMenu) closeLevelMenu();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !levelMenu.classList.contains('hidden')) closeLevelMenu();
+  });
+  const directionKeys = { up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight' };
   document.querySelectorAll('.touch-controls button').forEach(function (button) {
     const key = directionKeys[button.dataset.dir];
     function release(event) { if (event) event.preventDefault(); keys.delete(key); }
@@ -411,9 +573,7 @@
     button.addEventListener('pointercancel', release);
     button.addEventListener('lostpointercapture', function () { keys.delete(key); });
   });
-  showScores();
-  updateHud();
-  draw();
+  renderLevelMenu(); showScores(); updateHud(); draw();
 })(); 
 </script>
 </body>
